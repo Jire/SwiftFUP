@@ -2,19 +2,58 @@ package org.jire.swiftfup.server.net
 
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.ChannelInitializer
+import io.netty.channel.EventLoopGroup
 import io.netty.channel.socket.SocketChannel
+import it.unimi.dsi.fastutil.ints.Int2ByteMap
+import it.unimi.dsi.fastutil.ints.Int2ByteOpenHashMap
 import org.jire.swiftfup.server.net.codec.FileServerRequestDecoder
+import java.util.*
+import java.util.concurrent.TimeUnit
 
 /**
  * @author Jire
  */
 @Sharable
 class FileServerChannelInitializer(
+	private val eventLoopGroup: EventLoopGroup,
 	private val fileRequestResponses: FileRequestResponses
-) : ChannelInitializer<SocketChannel>() {
+) : ChannelInitializer<SocketChannel>(), Runnable {
+	
+	private val ipToConnections: Int2ByteMap = Int2ByteOpenHashMap()
+	
+	init {
+		eventLoopGroup.scheduleAtFixedRate(this, IP_CYCLE_TIME, IP_CYCLE_TIME, IP_CYCLE_TIME_UNIT)
+	}
 	
 	override fun initChannel(ch: SocketChannel) {
+		val ip = Arrays.hashCode(ch.remoteAddress().address.address)
+		val blockConnections = synchronized(ipToConnections) {
+			val connections = ipToConnections.get(ip)
+			if (connections >= IP_CYCLE_THRESHOLD) true
+			else {
+				ipToConnections[ip] = (connections + 1).toByte()
+				false
+			}
+		}
+		if (blockConnections) {
+			ch.close()
+			return
+		}
+		
 		ch.pipeline().addLast(FileServerRequestDecoder(fileRequestResponses))
+	}
+	
+	companion object {
+		private const val IP_CYCLE_THRESHOLD = 1
+		
+		private const val IP_CYCLE_TIME = 5L
+		private val IP_CYCLE_TIME_UNIT = TimeUnit.SECONDS
+	}
+	
+	override fun run() {
+		synchronized(ipToConnections) {
+			ipToConnections.clear()
+		}
 	}
 	
 }

@@ -29,7 +29,7 @@ class FileServer(
 		.channel(channelClass)
 		.childOption(ChannelOption.SO_KEEPALIVE, true)
 		.childOption(ChannelOption.TCP_NODELAY, true)
-		.childHandler(FileServerChannelInitializer(fileRequestResponses))
+		.childHandler(FileServerChannelInitializer(eventLoopGroup, fileRequestResponses))
 	
 	fun start(vararg ports: Int, print: Boolean = true) = createBootstrap().run {
 		if (print) println("[Binding to ports]")

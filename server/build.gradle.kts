@@ -16,6 +16,7 @@ application {
 
 dependencies {
 	Dependencies.configure(this)
+	implementation("net.openhft:zero-allocation-hashing:0.15")
 	
 	implementation(kotlin("stdlib"))
 	implementation("com.displee:rs-cache-library:6.8.1")
