@@ -4,6 +4,7 @@ import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.socket.SocketChannel
+import io.netty.handler.timeout.IdleStateHandler
 import it.unimi.dsi.fastutil.ints.Int2ByteMap
 import it.unimi.dsi.fastutil.ints.Int2ByteOpenHashMap
 import org.jire.swiftfup.server.net.codec.FileServerRequestDecoder
@@ -26,21 +27,20 @@ class FileServerChannelInitializer(
 	}
 	
 	override fun initChannel(ch: SocketChannel) {
-		val ip = Arrays.hashCode(ch.remoteAddress().address.address)
-		val blockConnections = synchronized(ipToConnections) {
+		val address = ch.remoteAddress().address
+		val ip = Arrays.hashCode(address.address)
+		
+		synchronized(ipToConnections) {
 			val connections = ipToConnections.get(ip)
-			if (connections >= IP_CYCLE_THRESHOLD) true
-			else {
-				ipToConnections[ip] = (connections + 1).toByte()
-				false
-			}
-		}
-		if (blockConnections) {
-			ch.close()
-			return
+			if (connections >= IP_CYCLE_THRESHOLD)
+				throw IllegalStateException("Too many connections from $address")
+			
+			ipToConnections[ip] = (connections + 1).toByte()
 		}
 		
-		ch.pipeline().addLast(FileServerRequestDecoder(fileRequestResponses))
+		ch.pipeline()
+			.addLast(IdleStateHandler(15, 0, 0))
+			.addLast(FileServerRequestDecoder(fileRequestResponses))
 	}
 	
 	companion object {
