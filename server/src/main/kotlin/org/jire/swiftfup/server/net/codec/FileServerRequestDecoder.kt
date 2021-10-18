@@ -3,6 +3,8 @@ package org.jire.swiftfup.server.net.codec
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.ByteToMessageDecoder
+import it.unimi.dsi.fastutil.ints.Int2BooleanMap
+import it.unimi.dsi.fastutil.ints.Int2BooleanOpenHashMap
 import org.jire.swiftfup.server.FilePair.Companion.readFilePair
 import org.jire.swiftfup.server.net.FileRequestResponses
 
@@ -13,8 +15,8 @@ class FileServerRequestDecoder(
 	private val fileRequestResponses: FileRequestResponses
 ) : ByteToMessageDecoder() {
 	
-	@Volatile
-	var crcs = false
+	private var crcs = false
+	private val fulfilledRequests: Int2BooleanMap = Int2BooleanOpenHashMap()
 	
 	override fun decode(ctx: ChannelHandlerContext, buf: ByteBuf, out: MutableList<Any>) {
 		if (!crcs) {
@@ -34,6 +36,11 @@ class FileServerRequestDecoder(
 				if (opcode != 1) throw IllegalArgumentException("Invalid cache file opcode: $opcode")
 				
 				val filePair = buf.readFilePair()
+				
+				if (fulfilledRequests.get(filePair.bitpack))
+					throw IllegalStateException("File pair was already fulfilled: $filePair")
+				fulfilledRequests[filePair.bitpack] = true
+				
 				val response = fileRequestResponses[filePair] ?: continue
 				ctx.write(response.retainedDuplicate(), ctx.voidPromise())
 				
