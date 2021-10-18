@@ -1,5 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.jire.swiftfp.build.Dependencies
+import org.jire.swiftfup.build.Dependencies
 
 plugins {
 	kotlin("jvm")
@@ -7,11 +7,11 @@ plugins {
 	id("com.github.johnrengelman.shadow") version "7.1.0"
 }
 
-group = "org.jire.swiftfp"
+group = "org.jire.swiftfup"
 version = "0.1.0"
 
 application {
-	mainClass.set("org.jire.swiftfp.server.Main")
+	mainClass.set("org.jire.swiftfup.server.Main")
 }
 
 dependencies {

@@ -1,4 +1,4 @@
-import org.jire.swiftfp.build.Dependencies
+import org.jire.swiftfup.build.Dependencies
 
 plugins {
 	`java-library`
