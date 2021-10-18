@@ -29,6 +29,7 @@ public final class FileChecksumsResponse {
 	}
 	
 	public static final class Builder {
+		
 		private final int size;
 		
 		private final int[] pairs;

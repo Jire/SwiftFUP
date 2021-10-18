@@ -1,23 +1,21 @@
-package org.jire.swiftfp.client.net.codec;
+package org.jire.swiftfp.client.net.netty.codec;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import org.jire.swiftfp.client.FileClient;
-import org.jire.swiftfp.client.FilePair;
-import org.jire.swiftfp.client.FileRequestResponse;
+import org.jire.swiftfp.client.crc32.CRC32FileResponder;
 
 import java.util.List;
 
 /**
  * @author Jire
  */
-public final class FileRequestDecoder extends ByteToMessageDecoder {
+public final class FileResponseDecoder extends ByteToMessageDecoder {
 	
-	private final FileClient fileClient;
+	private final CRC32FileResponder<?> fileResponder;
 	
-	public FileRequestDecoder(FileClient fileClient) {
-		this.fileClient = fileClient;
+	public FileResponseDecoder(CRC32FileResponder<?> fileResponder) {
+		this.fileResponder = fileResponder;
 	}
 	
 	@Override
@@ -36,11 +34,7 @@ public final class FileRequestDecoder extends ByteToMessageDecoder {
 			final byte[] data = dataSize > 0 ? new byte[dataSize] : null;
 			if (data != null) in.readBytes(data);
 			
-			final FileRequestResponse response = fileClient.getFileRequestResponseSupplier().supply(filePair, data);
-			
-			fileClient.completeFileRequest(response);
-			if (FilePair.index(filePair) > 0) fileClient.markLoadedData(response);
-			fileClient.writeToStore(response);
+			fileResponder.complete(filePair, data, dataSize);
 		}
 	}
 	

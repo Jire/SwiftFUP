@@ -21,13 +21,8 @@ dependencies {
 	implementation("com.displee:rs-cache-library:6.8.1")
 }
 
-java {
-	sourceCompatibility = JavaVersion.VERSION_11
-	targetCompatibility = JavaVersion.VERSION_11
-}
+java.toolchain.languageVersion.set(JavaLanguageVersion.of(11))
 
 tasks.withType<KotlinCompile> {
-	kotlinOptions {
-		jvmTarget = "11"
-	}
+	kotlinOptions.jvmTarget = "11"
 }

@@ -3,7 +3,7 @@ package org.jire.swiftfp.client;
 /**
  * @author Jire
  */
-public interface FileRequestResponse {
+public interface FileResponse {
 	
 	int getFilePair();
 	
@@ -15,8 +15,6 @@ public interface FileRequestResponse {
 		return FilePair.file(getFilePair());
 	}
 	
-	int getDataSize();
-	
-	byte[] getData();
+	void complete();
 	
 }

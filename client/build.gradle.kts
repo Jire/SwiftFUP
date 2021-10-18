@@ -1,14 +1,12 @@
 import org.jire.swiftfp.build.Dependencies
 
 plugins {
-	java
+	`java-library`
+	`maven-publish`
 }
 
 dependencies {
-	Dependencies.configure(this)
+	Dependencies.configure(this, "api")
 }
 
-java {
-	sourceCompatibility = JavaVersion.VERSION_1_8
-	targetCompatibility = JavaVersion.VERSION_1_8
-}
+java.toolchain.languageVersion.set(JavaLanguageVersion.of(8))

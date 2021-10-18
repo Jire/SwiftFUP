@@ -20,4 +20,8 @@ public enum FilePair {
 		return (pair >>> 5) & 0x7FFFF;
 	}
 	
+	public static String toString(int filePair) {
+		return index(filePair) + ":" + file(filePair);
+	}
+	
 }
