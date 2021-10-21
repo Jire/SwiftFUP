@@ -1,4 +1,4 @@
-package org.jire.swiftfup.client.net.netty.codec;
+package org.jire.swiftfup.client.codec;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
@@ -10,10 +10,10 @@ import org.jire.swiftfup.client.FileRequest;
  * @author Jire
  */
 @ChannelHandler.Sharable
-public final class FileRequestEncoder extends MessageToByteEncoder<FileRequest<?>> {
+public final class FileRequestEncoder extends MessageToByteEncoder<FileRequest> {
 	
 	@Override
-	protected void encode(ChannelHandlerContext ctx, FileRequest<?> msg, ByteBuf out) {
+	protected void encode(ChannelHandlerContext ctx, FileRequest msg, ByteBuf out) {
 		encode(out, msg.getFilePair());
 	}
 	

@@ -5,7 +5,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * @author Jire
  */
-public final class FileRequest<RESPONSE extends FileResponse> extends CompletableFuture<RESPONSE> {
+public final class FileRequest extends CompletableFuture<FileResponse> {
 	
 	private final int filePair;
 	

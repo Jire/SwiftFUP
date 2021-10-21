@@ -1,9 +1,10 @@
-package org.jire.swiftfup.client.net.netty.codec;
+package org.jire.swiftfup.client.codec;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import org.jire.swiftfup.client.crc32.CRC32FileResponder;
+import org.jire.swiftfup.client.FileRequests;
+import org.jire.swiftfup.client.FileResponse;
 
 import java.util.List;
 
@@ -12,10 +13,10 @@ import java.util.List;
  */
 public final class FileResponseDecoder extends ByteToMessageDecoder {
 	
-	private final CRC32FileResponder<?> fileResponder;
+	private final FileRequests fileRequests;
 	
-	public FileResponseDecoder(CRC32FileResponder<?> fileResponder) {
-		this.fileResponder = fileResponder;
+	public FileResponseDecoder(FileRequests fileRequests) {
+		this.fileRequests = fileRequests;
 	}
 	
 	@Override
@@ -34,14 +35,8 @@ public final class FileResponseDecoder extends ByteToMessageDecoder {
 			final byte[] data = dataSize > 0 ? new byte[dataSize] : null;
 			if (data != null) in.readBytes(data);
 			
-			fileResponder.complete(filePair, data, dataSize);
+			fileRequests.receiveResponse(new FileResponse(filePair, data));
 		}
-	}
-	
-	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-		cause.printStackTrace();
-		ctx.close();
 	}
 	
 }

@@ -3,18 +3,41 @@ package org.jire.swiftfup.client;
 /**
  * @author Jire
  */
-public interface FileResponse {
+public final class FileResponse {
 	
-	int getFilePair();
+	private final int filePair;
 	
-	default int getIndex() {
-		return FilePair.index(getFilePair());
+	private final byte[] data;
+	
+	private volatile byte[] decompressedData;
+	
+	public FileResponse(int filePair, byte[] data) {
+		this.filePair = filePair;
+		this.data = data;
 	}
 	
-	default int getFile() {
-		return FilePair.file(getFilePair());
+	public int getFilePair() {
+		return filePair;
 	}
 	
-	void complete();
+	public int getIndex() {
+		return FilePair.index(filePair);
+	}
+	
+	public int getFile() {
+		return FilePair.file(filePair);
+	}
+	
+	public byte[] getData() {
+		return data;
+	}
+	
+	public byte[] getDecompressedData() {
+		return decompressedData;
+	}
+	
+	public void setDecompressedData(byte[] decompressedData) {
+		this.decompressedData = decompressedData;
+	}
 	
 }
