@@ -7,9 +7,6 @@ plugins {
 	id("com.github.johnrengelman.shadow") version "7.1.0"
 }
 
-group = "org.jire.swiftfup"
-version = "0.1.0"
-
 application {
 	mainClass.set("org.jire.swiftfup.server.Main")
 }
