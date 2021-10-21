@@ -35,11 +35,14 @@ class FileServerChannelInitializer(
 			if (connections >= IP_CYCLE_THRESHOLD)
 				throw IllegalStateException("Too many connections from $address")
 			
-			ipToConnections[ip] = (connections + 1).toByte()
+			val newConnections = (connections + 1).toByte()
+			ipToConnections[ip] = newConnections
+			System.err.println("CONNECTED $address (connections=$newConnections)")
 		}
 		
+		
 		ch.pipeline()
-			.addLast(IdleStateHandler(15, 0, 0))
+			.addLast(IdleStateHandler(0, 0, 10))
 			.addLast(FileServerRequestDecoder(fileRequestResponses))
 	}
 	
