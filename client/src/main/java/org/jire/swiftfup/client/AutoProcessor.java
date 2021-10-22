@@ -3,7 +3,7 @@ package org.jire.swiftfup.client;
 /**
  * @author Jire
  */
-interface AutoProcessor {
+public interface AutoProcessor {
 	
 	boolean shouldAutoProcess(FileRequests fileRequests);
 	
