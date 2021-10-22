@@ -35,7 +35,7 @@ public final class FileResponseDecoder extends ByteToMessageDecoder {
 			final byte[] data = dataSize > 0 ? new byte[dataSize] : null;
 			if (data != null) in.readBytes(data);
 			
-			fileRequests.receiveResponse(new FileResponse(filePair, data));
+			fileRequests.notify(new FileResponse(filePair, data));
 		}
 	}
 	

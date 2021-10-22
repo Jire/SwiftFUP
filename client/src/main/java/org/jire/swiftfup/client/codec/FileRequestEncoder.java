@@ -14,16 +14,12 @@ public final class FileRequestEncoder extends MessageToByteEncoder<FileRequest> 
 	
 	@Override
 	protected void encode(ChannelHandlerContext ctx, FileRequest msg, ByteBuf out) {
-		encode(out, msg.getFilePair());
+		out.writeByte(1).writeMedium(msg.getFilePair());
 	}
 	
 	private FileRequestEncoder() {
 	}
 	
 	public static final FileRequestEncoder INSTANCE = new FileRequestEncoder();
-	
-	public static void encode(ByteBuf out, int filePair) {
-		out.writeByte(1).writeMedium(filePair);
-	}
 	
 }

@@ -1,7 +1,10 @@
 package org.jire.swiftfup.client;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
+import io.netty.channel.AbstractChannel;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
@@ -10,10 +13,6 @@ import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import org.jire.swiftfup.client.codec.FileChecksumsRequestEncoder;
-import org.jire.swiftfup.client.codec.FileChecksumsResponseDecoder;
-import org.jire.swiftfup.client.codec.FileRequestEncoder;
-import org.jire.swiftfup.client.codec.FileResponseDecoder;
 
 /**
  * @author Jire
@@ -24,10 +23,6 @@ public final class FileClient {
 	private final Bootstrap bootstrap;
 	
 	private volatile Channel channel;
-	
-	public FileClient(String host, int port, int requestCapacity) {
-		this(host, port, new FileRequests(requestCapacity));
-	}
 	
 	public FileClient(String host, int port,
 	                  FileRequests fileRequests) {
@@ -67,16 +62,7 @@ public final class FileClient {
 	
 	public Channel connect(boolean reconnect) {
 		Channel channel = bootstrap
-				.handler(new ChannelInitializer<Channel>() {
-					@Override
-					protected void initChannel(Channel ch) {
-						ch.pipeline().addLast(
-								reconnect ? FileRequestEncoder.INSTANCE
-										: FileChecksumsRequestEncoder.INSTANCE,
-								reconnect ? new FileResponseDecoder(fileRequests)
-										: new FileChecksumsResponseDecoder(fileRequests));
-					}
-				})
+				.handler(new FileClientChannelInitializer(getFileRequests(), reconnect))
 				.connect().syncUninterruptibly().channel();
 		
 		setChannel(channel);
@@ -100,7 +86,7 @@ public final class FileClient {
 	
 	public void request(FileRequest fileRequest) {
 		Channel channel = connectedChannel();
-		channel.writeAndFlush(fileRequest, channel.voidPromise());
+		channel.write(fileRequest, channel.voidPromise());
 	}
 	
 	public FileRequest request(int filePair) {
@@ -113,7 +99,7 @@ public final class FileClient {
 	
 	public void request(FileChecksumsRequest checksumsRequest) {
 		Channel channel = connectedChannel();
-		channel.writeAndFlush(checksumsRequest, channel.voidPromise());
+		channel.write(checksumsRequest, channel.voidPromise());
 	}
 	
 	public FileChecksumsRequest requestChecksums() {

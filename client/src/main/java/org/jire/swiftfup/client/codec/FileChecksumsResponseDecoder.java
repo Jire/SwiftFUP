@@ -31,10 +31,6 @@ public final class FileChecksumsResponseDecoder extends ByteToMessageDecoder {
 			return;
 		}
 		
-		ctx.pipeline().remove(this)
-				.addLast(FileRequestEncoder.INSTANCE)
-				.addLast(new FileResponseDecoder(fileRequests));
-		
 		Int2IntMap fileToChecksum = new Int2IntOpenHashMap(size);
 		for (int i = 0; i < size; i++) {
 			int filePair = in.readMedium();
@@ -42,8 +38,13 @@ public final class FileChecksumsResponseDecoder extends ByteToMessageDecoder {
 			
 			fileToChecksum.put(filePair, crc32);
 		}
+		
+		ctx.pipeline().remove(this)
+				.addLast(FileRequestEncoder.INSTANCE)
+				.addLast(new FileResponseDecoder(fileRequests));
+		
 		FileChecksumsResponse response = new FileChecksumsResponse(fileToChecksum);
-		fileRequests.getChecksumsRequest().complete(response);
+		fileRequests.notifyChecksums(response);
 	}
 	
 }
