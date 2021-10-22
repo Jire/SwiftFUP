@@ -11,7 +11,7 @@ public interface AutoProcessor {
 		long start = System.currentTimeMillis();
 		fileRequests.process();
 		long end = System.currentTimeMillis();
-		long elapsed = start - end;
+		long elapsed = end - start;
 		long sleepTime = sleepTime() - elapsed;
 		if (sleepTime > 0) {
 			try {
