@@ -17,6 +17,7 @@ dependencies {
 	
 	implementation(kotlin("stdlib"))
 	implementation("com.displee:rs-cache-library:6.8.1")
+	implementation("com.displee:disio:2.2")
 }
 
 java.toolchain.languageVersion.set(JavaLanguageVersion.of(11))
