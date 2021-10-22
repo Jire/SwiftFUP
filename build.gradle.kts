@@ -2,7 +2,7 @@ subprojects {
 	apply(plugin = "java")
 	
 	group = "org.jire.swiftfup"
-	version = "1.0.0"
+	version = "1.1.0"
 	
 	repositories {
 		mavenCentral()

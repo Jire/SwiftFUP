@@ -7,6 +7,8 @@ public interface FileStore {
 	
 	FileIndex getIndex(int indexID);
 	
-	byte[] decompress(byte[] data);
+	default byte[] decompress(byte[] data) {
+		return GZIPDecompressor.getInstance().decompress(data);
+	}
 	
 }
