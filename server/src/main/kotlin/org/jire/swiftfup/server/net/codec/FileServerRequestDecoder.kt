@@ -8,6 +8,7 @@ import it.unimi.dsi.fastutil.ints.Int2BooleanMap
 import it.unimi.dsi.fastutil.ints.Int2BooleanOpenHashMap
 import org.jire.swiftfup.server.FilePair.Companion.readFilePair
 import org.jire.swiftfup.server.net.FileRequestResponses
+import java.io.IOException
 
 /**
  * @author Jire
@@ -53,9 +54,9 @@ class FileServerRequestDecoder(
 						throw IllegalStateException("File pair was already fulfilled: $filePair")
 					fulfilledRequests[filePair.bitpack] = true
 					
-					val response = fileRequestResponses[filePair] ?: continue
+					val response = fileRequestResponses[filePair]
+						?: throw IllegalStateException("Request was null for $filePair")
 					
-					println("REQUEST ${filePair.index}:${filePair.file}")
 					ctx.write(response.retainedDuplicate(), ctx.voidPromise())
 					
 					flush = true
@@ -67,14 +68,13 @@ class FileServerRequestDecoder(
 	}
 	
 	override fun userEventTriggered(ctx: ChannelHandlerContext, evt: Any) {
-		if (evt is IdleStateEvent) {
-			IllegalStateException("Channel ${ctx.channel().remoteAddress()} was idle!").printStackTrace()
+		if (evt is IdleStateEvent)
 			ctx.close()
-		}
 	}
 	
 	override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
-		cause.printStackTrace()
+		if (cause !is IOException)
+			cause.printStackTrace()
 		ctx.close()
 	}
 	

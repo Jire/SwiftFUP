@@ -9,7 +9,7 @@ import org.jire.swiftfup.server.net.FileServer
 object Main {
 	
 	private const val DEFAULT_CACHE_PATH = "cache"
-	private val defaultPorts = intArrayOf(55555/*43595, 43596*/)
+	private val defaultPorts = intArrayOf(43595)
 	
 	@JvmStatic
 	fun main(args: Array<String>) {

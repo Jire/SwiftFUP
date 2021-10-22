@@ -37,20 +37,20 @@ class FileServerChannelInitializer(
 			
 			val newConnections = (connections + 1).toByte()
 			ipToConnections[ip] = newConnections
-			System.err.println("CONNECTED $address (connections=$newConnections)")
 		}
 		
-		
 		ch.pipeline()
-			.addLast(IdleStateHandler(0, 0, 10))
+			.addLast(IdleStateHandler(0, 0, IDLE_TIMEOUT_SECONDS))
 			.addLast(FileServerRequestDecoder(fileRequestResponses))
 	}
 	
 	companion object {
-		private const val IP_CYCLE_THRESHOLD = 1
+		private const val IP_CYCLE_THRESHOLD = 5
 		
-		private const val IP_CYCLE_TIME = 5L
+		private const val IP_CYCLE_TIME = 30L
 		private val IP_CYCLE_TIME_UNIT = TimeUnit.SECONDS
+		
+		private const val IDLE_TIMEOUT_SECONDS = 30
 	}
 	
 	override fun run() {
