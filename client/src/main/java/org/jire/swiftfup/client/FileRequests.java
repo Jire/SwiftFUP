@@ -132,7 +132,7 @@ public final class FileRequests {
 		int index = FilePair.index(filePair);
 		int file = FilePair.file(filePair);
 		FileIndex fileIndex = fileStore.getIndex(index);
-		return fileIndex.getFile(file);
+		return fileIndex == null ? null : fileIndex.getFile(file);
 	}
 	
 	public boolean checksumMatches(int filePair, byte[] data) {
