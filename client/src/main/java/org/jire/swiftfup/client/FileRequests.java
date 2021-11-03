@@ -73,13 +73,19 @@ public final class FileRequests {
 		request = new FileRequest(filePair);
 		requests.put(filePair, request);
 		if (index > 0) {
-			request.thenAcceptAsync(this::notifyDecompressed);
-			
 			byte[] diskData = getDiskData(filePair);
 			if (checksumMatches(filePair, diskData)) {
-				request.complete(new FileResponse(filePair, diskData));
+				FileResponse response = new FileResponse(filePair, diskData);
+				
+				/* we must decompress here to have stuff like anims loading within same client frame */
+				response.setDecompressedData(fileStore);
+				decompressedResponseConsumer.accept(response);
+				
+				request.complete(response);
 				return request;
 			}
+			
+			request.thenAcceptAsync(this::notifyDecompressed);
 		}
 		
 		request.thenAcceptAsync(response -> {
@@ -108,11 +114,7 @@ public final class FileRequests {
 	}
 	
 	public void notifyDecompressed(FileResponse response) {
-		byte[] data = response.getData();
-		if (data != null && data.length > 0) {
-			byte[] decompressedData = fileStore.decompress(data);
-			response.setDecompressedData(decompressedData);
-		}
+		response.setDecompressedData(fileStore);
 		decompressedResponses.offer(response);
 	}
 	

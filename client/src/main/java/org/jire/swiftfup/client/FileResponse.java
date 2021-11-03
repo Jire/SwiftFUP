@@ -40,4 +40,13 @@ public final class FileResponse {
 		this.decompressedData = decompressedData;
 	}
 	
+	public byte[] setDecompressedData(FileStore fileStore) {
+		byte[] data = getData();
+		if (data == null || data.length < 1) return null;
+		
+		byte[] decompressedData = fileStore.decompress(data);
+		setDecompressedData(decompressedData);
+		return decompressedData;
+	}
+	
 }
