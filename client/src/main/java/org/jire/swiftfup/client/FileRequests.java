@@ -28,6 +28,8 @@ public final class FileRequests {
 	private final MessagePassingQueue<FileResponse> decompressedResponses;
 	private final MessagePassingQueue.Consumer<FileResponse> decompressedResponseConsumer;
 	
+	private volatile boolean ignoreChecksums;
+	
 	public FileRequests(int capacity,
 	                    FileStore fileStore,
 	                    FileDecompressedListener fileDecompressedListener) {
@@ -137,8 +139,16 @@ public final class FileRequests {
 		return fileIndex == null ? null : fileIndex.getFile(file);
 	}
 	
+	public boolean isIgnoreChecksums() {
+		return ignoreChecksums;
+	}
+	
+	public void setIgnoreChecksums(boolean ignoreChecksums) {
+		this.ignoreChecksums = ignoreChecksums;
+	}
+	
 	public boolean checksumMatches(int filePair, byte[] data) {
-		return checksumMatchesData(getChecksum(filePair), data);
+		return (isIgnoreChecksums() && data != null) || checksumMatchesData(getChecksum(filePair), data);
 	}
 	
 	private static final ThreadLocal<CRC32> threadLocalCRC32 = ThreadLocal.withInitial(CRC32::new);
