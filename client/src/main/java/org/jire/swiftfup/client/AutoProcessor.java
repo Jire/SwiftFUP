@@ -1,24 +1,26 @@
 package org.jire.swiftfup.client;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * @author Jire
  */
 public interface AutoProcessor {
 	
 	boolean shouldAutoProcess(FileRequests fileRequests);
-	
+
 	default void autoProcess(FileRequests fileRequests) {
-		long start = System.currentTimeMillis();
+		long start = System.nanoTime();
 		fileRequests.process();
-		long end = System.currentTimeMillis();
+		long end = System.nanoTime();
 		long elapsed = end - start;
 		long sleepTime = sleepTime() - elapsed;
-		if (sleepTime > 0) {
+		long sleepTimeMillis = TimeUnit.NANOSECONDS.toMillis(sleepTime);
+		if (sleepTimeMillis > 0) {
 			try {
-				Thread.sleep(sleepTime);
+				Thread.sleep(sleepTimeMillis);
 			} catch (InterruptedException ie) {
 				ie.printStackTrace();
-				return;
 			}
 		}
 	}
