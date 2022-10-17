@@ -4,7 +4,7 @@ import org.jire.swiftfup.build.Dependencies
 plugins {
 	kotlin("jvm")
 	application
-	id("com.github.johnrengelman.shadow") version "7.1.0"
+	id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
 application {
@@ -13,7 +13,7 @@ application {
 
 dependencies {
 	Dependencies.configure(this)
-	implementation("net.openhft:zero-allocation-hashing:0.15")
+	implementation("net.openhft:zero-allocation-hashing:0.16")
 	
 	implementation(kotlin("stdlib"))
 	implementation("com.displee:rs-cache-library:6.8.1")

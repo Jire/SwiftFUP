@@ -12,9 +12,9 @@ enum class Dependencies(
 	val version: String
 ) {
 	
-	Netty("io.netty", "netty-all", "4.1.69.Final"),
-	FastUtil("it.unimi.dsi", "fastutil", "8.5.6"),
-	`SLF4J-Simple`("org.slf4j", "slf4j-simple", "1.7.32")
+	Netty("io.netty", "netty-all", "4.1.84.Final"),
+	FastUtil("it.unimi.dsi", "fastutil", "8.5.9"),
+	`SLF4J-Simple`("org.slf4j", "slf4j-simple", "2.0.3")
 	
 	;
 	

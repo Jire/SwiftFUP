@@ -9,7 +9,7 @@ repositories {
 }
 
 dependencies {
-	implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.31")
+	implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.20")
 }
 
 tasks.withType<KotlinCompile> {
