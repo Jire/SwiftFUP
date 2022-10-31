@@ -1,14 +1,4 @@
-subprojects {
-    apply(plugin = "java")
-
+allprojects {
     group = "org.jire.swiftfup"
-    version = "1.3.0"
-
-    repositories {
-        mavenCentral()
-    }
-
-    tasks.named<Jar>("jar") {
-        archiveBaseName.set("${rootProject.name}-${project.name}")
-    }
+    version = "1.4.0"
 }

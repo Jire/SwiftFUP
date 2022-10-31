@@ -13,7 +13,9 @@ import io.netty.channel.kqueue.KQueueEventLoopGroup
 import io.netty.channel.kqueue.KQueueServerSocketChannel
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
+import io.netty.util.NettyRuntime
 import io.netty.util.ResourceLeakDetector
+import kotlin.math.max
 
 /**
  * @author Jire
@@ -21,17 +23,21 @@ import io.netty.util.ResourceLeakDetector
 class FileServer(
     private val fileRequestResponses: FileRequestResponses,
 
-    private val eventLoopGroup: EventLoopGroup = bestEventLoopGroup(),
-    private val channelClass: Class<out ServerChannel> = bestChannelClass()
+    private val parentGroup: EventLoopGroup =
+        eventLoopGroup(1),
+    private val childGroup: EventLoopGroup =
+        eventLoopGroup(max(1, NettyRuntime.availableProcessors() - 1)),
+
+    private val channelClass: Class<out ServerChannel> = serverChannelClass(parentGroup)
 ) {
 
     private fun createBootstrap(): ServerBootstrap = ServerBootstrap()
-        .group(eventLoopGroup)
+        .group(parentGroup, childGroup)
         .channel(channelClass)
 
         .childOption(ChannelOption.SO_KEEPALIVE, true)
         .childOption(ChannelOption.TCP_NODELAY, true)
-        .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30_000)
+        .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120_000)
 
         .childOption(ChannelOption.SO_SNDBUF, 65536)
         .childOption(ChannelOption.SO_RCVBUF, 65536)
@@ -41,13 +47,17 @@ class FileServer(
             WriteBufferWaterMark(8192, 131072)
         )
 
-        .childHandler(FileServerChannelInitializer(eventLoopGroup, fileRequestResponses))
+        .childHandler(FileServerChannelInitializer(fileRequestResponses))
 
     fun start(vararg ports: Int, print: Boolean = true) = createBootstrap().run {
         if (print) println("[Binding to ports]")
         for (port in ports) {
             if (print) print("    port $port [...]")
-            bind(port).syncUninterruptibly().get()
+
+            bind(port)
+                .syncUninterruptibly()
+                .get()
+
             if (print) println("\b\b\b\bdone]")
         }
     }
@@ -59,15 +69,15 @@ class FileServer(
 
     private companion object {
 
-        fun bestEventLoopGroup() = when {
-            Epoll.isAvailable() -> EpollEventLoopGroup()
-            KQueue.isAvailable() -> KQueueEventLoopGroup()
-            else -> NioEventLoopGroup()
+        fun eventLoopGroup(numThreads: Int = 0) = when {
+            Epoll.isAvailable() -> EpollEventLoopGroup(numThreads)
+            KQueue.isAvailable() -> KQueueEventLoopGroup(numThreads)
+            else -> NioEventLoopGroup(numThreads)
         }
 
-        fun bestChannelClass(): Class<out ServerChannel> = when {
-            Epoll.isAvailable() -> EpollServerSocketChannel::class.java
-            KQueue.isAvailable() -> KQueueServerSocketChannel::class.java
+        fun serverChannelClass(group: EventLoopGroup): Class<out ServerChannel> = when (group) {
+            is EpollEventLoopGroup -> EpollServerSocketChannel::class.java
+            is KQueueEventLoopGroup -> KQueueServerSocketChannel::class.java
             else -> NioServerSocketChannel::class.java
         }
 

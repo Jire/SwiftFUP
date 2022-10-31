@@ -21,14 +21,16 @@ class FileServerRequestHandler(
 
     override fun channelRead0(ctx: ChannelHandlerContext, msg: FilePair) {
         if (msg.bitpack == FilePair.checksumsFilePair.bitpack) {
-            if (fulfilledChecksums)
+            if (fulfilledChecksums) {
                 throw IllegalStateException("Cannot request checksums multiple times!")
+            }
             fulfilledChecksums = true
 
             ctx.write(responses.checksumsResponse.retainedDuplicate(), ctx.voidPromise())
         } else {
-            if (fulfilledPairs.get(msg.bitpack))
+            if (fulfilledPairs.get(msg.bitpack)) {
                 throw IllegalStateException("File pair was already fulfilled: $msg")
+            }
             fulfilledPairs[msg.bitpack] = true
 
             val response = responses[msg]
@@ -51,6 +53,7 @@ class FileServerRequestHandler(
         val channel = ctx.channel()
         if (channel.isWritable) {
             channel.config().isAutoRead = true
+            ctx.read()
         } else {
             ctx.flush()
             if (!channel.isWritable) {
@@ -60,14 +63,16 @@ class FileServerRequestHandler(
     }
 
     override fun userEventTriggered(ctx: ChannelHandlerContext, evt: Any) {
-        if (evt is IdleStateEvent)
+        if (evt is IdleStateEvent) {
             ctx.close()
+        }
     }
 
     @Deprecated("Deprecated in Java")
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
-        if (cause !is IOException)
+        if (cause !is IOException) {
             cause.printStackTrace()
+        }
         ctx.close()
     }
 

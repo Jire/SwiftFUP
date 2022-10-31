@@ -1,3 +1,6 @@
 rootProject.name = "SwiftFUP"
 
-include("server", "client")
+include(
+    "server",
+    "client"
+)

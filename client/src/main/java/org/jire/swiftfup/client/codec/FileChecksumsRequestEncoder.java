@@ -1,7 +1,6 @@
 package org.jire.swiftfup.client.codec;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import org.jire.swiftfup.client.FileChecksumsRequest;
@@ -9,16 +8,11 @@ import org.jire.swiftfup.client.FileChecksumsRequest;
 /**
  * @author Jire
  */
-@ChannelHandler.Sharable
 public final class FileChecksumsRequestEncoder extends MessageToByteEncoder<FileChecksumsRequest> {
-	
-	public static final FileChecksumsRequestEncoder INSTANCE = new FileChecksumsRequestEncoder();
-	
-	@Override
-	protected void encode(ChannelHandlerContext ctx, FileChecksumsRequest msg, ByteBuf out) {
-		out.writeByte(0);
-		
-		ctx.pipeline().remove(this);
-	}
-	
+
+    @Override
+    protected void encode(ChannelHandlerContext ctx, FileChecksumsRequest msg, ByteBuf out) {
+        out.writeByte(0);
+    }
+
 }
