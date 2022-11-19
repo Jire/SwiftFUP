@@ -5,6 +5,9 @@
       <module name="SwiftFP.server" target="11" />
       <module name="SwiftFP.server.main" target="11" />
       <module name="SwiftFP.server.test" target="11" />
+      <module name="SwiftFUP.buildSrc" target="17" />
+      <module name="SwiftFUP.buildSrc.main" target="17" />
+      <module name="SwiftFUP.buildSrc.test" target="17" />
     </bytecodeTargetLevel>
   </component>
 </project>

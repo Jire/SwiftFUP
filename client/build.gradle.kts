@@ -1,5 +1,3 @@
-import org.jire.swiftfup.build.Dependencies
-
 plugins {
     `java-library`
     `maven-publish`
@@ -10,7 +8,9 @@ repositories {
 }
 
 dependencies {
-    Dependencies.configure(this, "api")
+    implementation(libs.netty)
+    implementation(libs.fastutil)
+    runtimeOnly(libs.slf4j.simple)
 }
 
 java.toolchain.languageVersion.set(JavaLanguageVersion.of(8))

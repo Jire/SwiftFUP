@@ -1,5 +1,4 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.jire.swiftfup.build.Dependencies
 
 plugins {
     kotlin("jvm")
@@ -12,11 +11,14 @@ repositories {
 }
 
 dependencies {
-    Dependencies.configure(this)
-    implementation("net.openhft:zero-allocation-hashing:0.16")
+    implementation(libs.netty)
+    implementation(libs.fastutil)
+    implementation(libs.zero.allocation.hashing)
 
-    implementation("com.displee:rs-cache-library:6.8.1")
-    implementation("com.displee:disio:2.2")
+    implementation(libs.rs.cache.library)
+    implementation(libs.disio)
+
+    runtimeOnly(libs.slf4j.simple)
 }
 
 application {
