@@ -10,6 +10,8 @@ repositories {
 dependencies {
     implementation(libs.netty)
     implementation(libs.fastutil)
+
+    implementation(libs.slf4j.api)
     runtimeOnly(libs.slf4j.simple)
 }
 

@@ -18,6 +18,7 @@ dependencies {
     implementation(libs.rs.cache.library)
     implementation(libs.disio)
 
+    implementation(libs.slf4j.api)
     runtimeOnly(libs.slf4j.simple)
 }
 
