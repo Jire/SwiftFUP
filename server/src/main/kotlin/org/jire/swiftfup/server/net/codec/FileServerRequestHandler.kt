@@ -15,12 +15,12 @@ class FileServerRequestHandler(
 
     override fun channelRead0(ctx: ChannelHandlerContext, msg: FilePair) {
         if (msg.bitpack == FilePair.checksumsFilePair.bitpack) {
-            ctx.write(responses.checksumsResponse.retainedDuplicate(), ctx.voidPromise())
+            ctx.writeAndFlush(responses.checksumsResponse.retainedDuplicate(), ctx.voidPromise())
         } else {
             val response = responses[msg]
                 ?: throw IllegalStateException("Request was null for $msg")
 
-            ctx.write(response.retainedDuplicate(), ctx.voidPromise())
+            ctx.writeAndFlush(response.retainedDuplicate(), ctx.voidPromise())
         }
     }
 
