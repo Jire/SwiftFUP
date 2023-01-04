@@ -41,6 +41,8 @@ public final class FileClient {
                 .channel(channelClass)
                 .group(group)
                 .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120_000)
+                .option(ChannelOption.SO_TIMEOUT, 120_000)
                 .remoteAddress(host, port);
     }
 
