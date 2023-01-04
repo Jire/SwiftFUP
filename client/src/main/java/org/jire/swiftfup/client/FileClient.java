@@ -91,6 +91,7 @@ public final class FileClient {
     public void request(FileRequest fileRequest) {
         Channel channel = connectedChannel();
         channel.write(fileRequest, channel.voidPromise());
+        fileRequest.sent();
     }
 
     public FileRequest request(int filePair) {
