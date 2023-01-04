@@ -63,7 +63,7 @@ public final class FileRequests {
 		final int file = FilePair.file(filePair);
 		
 		FileRequest request = requests.get(filePair);
-		if (request != null) {
+		if (request != null && request.isSent()) {
 			if (index > 0) {
 				FileResponse response = request.getNow(null);
 				if (response != null && response.getDecompressedData() != null)
