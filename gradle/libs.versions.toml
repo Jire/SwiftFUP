@@ -1,9 +1,9 @@
 [versions]
-slf4j = "2.0.5"
+slf4j = "2.0.6"
 
 [libraries]
-netty = { module = "io.netty:netty-all", version = "4.1.85.Final" }
-fastutil = { module = "it.unimi.dsi:fastutil", version = "8.5.9" }
+netty = { module = "io.netty:netty-all", version = "4.1.86.Final" }
+fastutil = { module = "it.unimi.dsi:fastutil", version = "8.5.11" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 zero-allocation-hashing = { module = "net.openhft:zero-allocation-hashing", version = "0.16" }
