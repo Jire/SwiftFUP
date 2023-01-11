@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     kotlin("jvm")
     application
@@ -26,10 +24,8 @@ application {
     mainClass.set("org.jire.swiftfup.server.Main")
 }
 
-java.toolchain.languageVersion.set(JavaLanguageVersion.of(17))
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "17"
+kotlin {
+    jvmToolchain(17)
 }
 
 tasks.named<Jar>("jar") {
