@@ -22,6 +22,9 @@ dependencies {
 
 application {
     mainClass.set("org.jire.swiftfup.server.Main")
+    applicationDefaultJvmArgs += arrayOf(
+        "-XX:+UseZGC",
+    )
 }
 
 kotlin {
