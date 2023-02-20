@@ -22,6 +22,6 @@ java {
     withSourcesJar()
 }
 
-tasks.named<Jar>("jar") {
+tasks.named<Jar>("jar").configure {
     archiveBaseName.set("${rootProject.name}-${project.name}")
 }

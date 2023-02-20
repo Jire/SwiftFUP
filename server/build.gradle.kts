@@ -31,6 +31,6 @@ kotlin {
     jvmToolchain(19)
 }
 
-tasks.named<Jar>("jar") {
+tasks.named<Jar>("jar").configure {
     archiveBaseName.set("${rootProject.name}-${project.name}")
 }
