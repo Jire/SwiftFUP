@@ -19,7 +19,7 @@ public final class FileResponseDecoder extends ByteToMessageDecoder {
         }
         in.markReaderIndex();
 
-        final int filePair = in.readMedium();
+        final int filePair = in.readUnsignedMedium();
 
         final int dataSize = in.readUnsignedMedium();
         if (!in.isReadable(dataSize)) {

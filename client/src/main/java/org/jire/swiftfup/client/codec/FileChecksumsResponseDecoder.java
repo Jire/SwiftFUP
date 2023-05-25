@@ -32,7 +32,7 @@ public final class FileChecksumsResponseDecoder extends ByteToMessageDecoder {
             return;
         }
 
-        final int filePair = in.readMedium();
+        final int filePair = in.readUnsignedMedium();
         final int crc32 = in.readInt();
 
         fileToChecksum.put(filePair, crc32);
