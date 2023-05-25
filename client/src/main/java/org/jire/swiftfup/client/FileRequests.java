@@ -23,11 +23,11 @@ public final class FileRequests {
 	private final Int2ObjectMap<FileRequest> requests;
 	
 	private final MessagePassingQueue<FileResponse> completedResponses;
-	private final MessagePassingQueue.Consumer<FileResponse> completedResponseConsumer;
-	
+
 	private final MessagePassingQueue<FileResponse> decompressedResponses;
-	private final MessagePassingQueue.Consumer<FileResponse> decompressedResponseConsumer;
-	
+
+	private final FileDecompressedListener fileDecompressedListener;
+
 	private volatile boolean ignoreChecksums;
 	
 	public FileRequests(int capacity,
@@ -42,14 +42,9 @@ public final class FileRequests {
 		requests = new Int2ObjectOpenHashMap<>(capacity);
 		
 		completedResponses = new MpscArrayQueue<>(capacity);
-		completedResponseConsumer = response -> {
-			int filePair = response.getFilePair();
-			FileRequest request = requests.get(filePair);
-			request.complete(response);
-		};
-		
+
 		decompressedResponses = new MpscArrayQueue<>(capacity);
-		decompressedResponseConsumer = fileDecompressedListener::decompressed;
+		this.fileDecompressedListener = fileDecompressedListener;
 	}
 	
 	public FileChecksumsRequest checksums(FileClient fileClient) {
@@ -81,8 +76,8 @@ public final class FileRequests {
 				
 				/* we must decompress here to have stuff like anims loading within same client frame */
 				response.setDecompressedData(fileStore);
-				decompressedResponseConsumer.accept(response);
-				
+				fileDecompressedListener.decompressed(response);
+
 				request.complete(response);
 				return request;
 			}
@@ -103,8 +98,29 @@ public final class FileRequests {
 	}
 	
 	public void process() {
-		completedResponses.drain(completedResponseConsumer, capacity);
-		decompressedResponses.drain(decompressedResponseConsumer, capacity);
+		processCompletedResponses();
+		processDecompressedResponses();
+	}
+
+	private void processCompletedResponses() {
+		final MessagePassingQueue<FileResponse> completedResponses = this.completedResponses;
+		final Int2ObjectMap<FileRequest> requests = this.requests;
+		while (!completedResponses.isEmpty()) {
+			final FileResponse response = completedResponses.poll();
+
+			int filePair = response.getFilePair();
+			FileRequest request = requests.get(filePair);
+			request.complete(response);
+		}
+	}
+
+	private void processDecompressedResponses() {
+		final MessagePassingQueue<FileResponse> decompressedResponses = this.decompressedResponses;
+		final FileDecompressedListener fileDecompressedListener = this.fileDecompressedListener;
+		while (!decompressedResponses.isEmpty()) {
+			final FileResponse response = decompressedResponses.poll();
+			fileDecompressedListener.decompressed(response);
+		}
 	}
 	
 	public void notifyChecksums(FileChecksumsResponse response) {
