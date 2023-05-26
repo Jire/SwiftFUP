@@ -16,6 +16,8 @@ value class FilePair(val bitpack: Int) {
     operator fun component1() = index
     operator fun component2() = file
 
+    override fun toString() = "FilePair(index=$index, file=$file)"
+
     companion object {
 
         const val SIZE_BYTES = 3

@@ -14,14 +14,14 @@ public final class FileResponseDecoder extends ByteToMessageDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
-        if (!in.isReadable(6)) {
+        if (!in.isReadable(7)) {
             return;
         }
         in.markReaderIndex();
 
         final int filePair = in.readUnsignedMedium();
 
-        final int dataSize = in.readUnsignedMedium();
+        final int dataSize = in.readInt();
         if (!in.isReadable(dataSize)) {
             in.resetReaderIndex();
             return;

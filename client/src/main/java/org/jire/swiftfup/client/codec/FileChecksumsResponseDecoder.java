@@ -20,11 +20,11 @@ public final class FileChecksumsResponseDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
         if (size == -1 || fileToChecksum == null) {
-            if (!in.isReadable(3)) {
+            if (!in.isReadable(4)) {
                 return;
             }
 
-            size = in.readUnsignedMedium();
+            size = in.readInt();
             fileToChecksum = new Int2IntOpenHashMap(size);
         }
 

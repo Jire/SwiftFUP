@@ -25,7 +25,7 @@ class FileRequestResponses {
 		val indices = library.indices()
 		
 		var checksumsComputed = 0
-		val checksumsBuffer = directBuffer(indices.size * 7)
+		val checksumsBuffer = directBuffer(indices.size * 8)
 		
 		if (print) println("[Building cache responses]")
 		for (index in indices) {
@@ -42,10 +42,10 @@ class FileRequestResponses {
 				
 				val filePair = FilePair(index.id, archive.id)
 				
-				val byteBufSize = FilePair.SIZE_BYTES + 3 + dataSize
+				val byteBufSize = FilePair.SIZE_BYTES + 4 + dataSize
 				val byteBuf = directBuffer(byteBufSize, byteBufSize)
 					.writeFilePair(filePair)
-					.writeMedium(dataSize)
+					.writeInt(dataSize)
 				val crc = if (found) {
 					byteBuf.writeBytes(data)
 					
@@ -72,8 +72,8 @@ class FileRequestResponses {
 		}
 		if (print) println()
 		
-		checksumsResponse = directBuffer(checksumsBuffer.readableBytes() + 3).run {
-			writeMedium(checksumsComputed)
+		checksumsResponse = directBuffer(checksumsBuffer.readableBytes() + 4).run {
+			writeInt(checksumsComputed)
 			writeBytes(checksumsBuffer)
 			checksumsBuffer.release()
 			asReadOnly()
