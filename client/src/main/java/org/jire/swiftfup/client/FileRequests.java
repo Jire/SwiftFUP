@@ -107,6 +107,7 @@ public final class FileRequests {
 		final Int2ObjectMap<FileRequest> requests = this.requests;
 		while (!completedResponses.isEmpty()) {
 			final FileResponse response = completedResponses.poll();
+			if (response == null) break;
 
 			int filePair = response.getFilePair();
 			FileRequest request = requests.get(filePair);
@@ -119,6 +120,8 @@ public final class FileRequests {
 		final FileDecompressedListener fileDecompressedListener = this.fileDecompressedListener;
 		while (!decompressedResponses.isEmpty()) {
 			final FileResponse response = decompressedResponses.poll();
+			if (response == null) break;
+
 			fileDecompressedListener.decompressed(response);
 		}
 	}
