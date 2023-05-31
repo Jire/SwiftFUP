@@ -7,10 +7,14 @@ kotlin {
 }
 
 dependencies {
+    implementation(libs.fastutil)
+
     implementation(libs.rs.cache.library)
     implementation(libs.disio)
 
     implementation(libs.netty)
+
+    implementation("com.google.code.gson:gson:2.10.1")
 }
 
 val defaultJvmArgs = arrayOf(

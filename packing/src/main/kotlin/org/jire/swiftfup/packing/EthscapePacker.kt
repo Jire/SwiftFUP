@@ -12,7 +12,7 @@ import java.nio.file.Path
  */
 object EthscapePacker {
 
-    private const val REBUILD = false
+    private const val REBUILD = true
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -30,17 +30,21 @@ object EthscapePacker {
 
         cacheTo.mainFileSprites(cachePath)
 
-        val cacheFrom = CacheLibrary.create("cache213")
+        val cacheFrom = CacheLibrary.create("../server/cache213")
 
-        models(cacheFrom, cacheTo)
+/*        models(cacheFrom, cacheTo)
         items(cacheFrom, cacheTo)
         seq(cacheFrom, cacheTo)
         frameBases(cacheFrom, cacheTo)
         frames(cacheFrom, cacheTo)
         npc(cacheFrom, cacheTo)
         graphic(cacheFrom, cacheTo)
-        objects(cacheFrom, cacheTo)
-
+        objects(cacheFrom, cacheTo)*/
+        /*varp(cacheFrom, cacheTo)
+        varbit(cacheFrom, cacheTo)*/
+        //maps(cacheFrom, cacheTo)
+        underlays(cacheFrom, cacheTo)
+        overlays(cacheFrom, cacheTo)
 
         cacheTo.update()
         cacheTo.close()
@@ -381,6 +385,212 @@ object EthscapePacker {
         cacheTo.index(0).update()
 
         println("object highest $highestFileId")
+    }
+
+    private fun varbit(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
+        var highestFileId = -1
+        var biggestSize = 0
+        val buf = Unpooled.buffer()
+        buf.writeShort(0)
+
+        val configIndex = cacheFrom.index(2)
+        configIndex.cache()
+
+        val fromArchive = configIndex.archive(14)!!
+        for (file in fromArchive.files()) {
+            val data = file.data
+            if (data == null || data.size < 1) {
+                println("skipped varbit file ${file.id} (no data)")
+                buf.writeShort(-1)
+            } else {
+                val fileId = file.id
+                buf.writeShort(fileId)
+                buf.writeShort(data.size)
+                buf.writeBytes(data)
+                if (fileId > highestFileId)
+                    highestFileId = fileId
+                if (data.size > biggestSize)
+                    biggestSize = data.size
+            }
+        }
+
+        buf.setShort(0, highestFileId)
+
+        buf.readerIndex(0)
+        val array = ByteArray(buf.readableBytes())
+        buf.readBytes(array)
+
+        println("varbit highest $highestFileId and biggest was $biggestSize (total bytes=${array.size})")
+
+        cacheTo.put(0, 2, "varbit.dat", array)
+
+        cacheTo.index(0).update()
+    }
+
+    private fun varp(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
+        var highestFileId = -1
+        var biggestSize = 0
+        val buf = Unpooled.buffer()
+        buf.writeShort(0)
+
+        val configIndex = cacheFrom.index(2)
+        configIndex.cache()
+
+        val fromArchive = configIndex.archive(16)!!
+        for (file in fromArchive.files()) {
+            val data = file.data
+            if (data == null || data.size < 1) {
+                println("skipped varp file ${file.id} (no data)")
+                buf.writeShort(-1)
+            } else {
+                val fileId = file.id
+                buf.writeShort(fileId)
+                buf.writeShort(data.size)
+                buf.writeBytes(data)
+                if (fileId > highestFileId)
+                    highestFileId = fileId
+                if (data.size > biggestSize)
+                    biggestSize = data.size
+            }
+        }
+
+        buf.setShort(0, highestFileId)
+
+        buf.readerIndex(0)
+        val array = ByteArray(buf.readableBytes())
+        buf.readBytes(array)
+
+        println("varp highest $highestFileId and biggest was $biggestSize (total bytes=${array.size})")
+
+        cacheTo.put(0, 2, "varp.dat", array)
+
+        cacheTo.index(0).update()
+    }
+
+    private fun maps(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
+        DefaultXteaRepository.load()
+
+        val idx = Unpooled.buffer()
+        idx.writeShort(0)
+
+        var mapCount = 0
+        var fileId = 0
+        for ((region, xtea) in DefaultXteaRepository.map.int2ObjectEntrySet()) {
+            val x = (region ushr 8) and 0xFF
+            val y = region and 0xFF
+
+            val mapFileId = fileId++
+            val mapName = "m${x}_$y"
+            val map = cacheFrom.data(5, mapName, 0)!!
+
+            val landFileId = fileId++
+            val landName = "l${x}_$y"
+            val land = cacheFrom.data(5, landName, 0, xtea.key)!!
+
+            cacheTo.remove(4, mapFileId)
+            cacheTo.put(4, mapFileId, map)
+
+            cacheTo.remove(4, landFileId)
+            cacheTo.put(4, landFileId, land)
+
+            idx.writeShort(region)
+            idx.writeShort(mapFileId)
+            idx.writeShort(landFileId)
+
+            mapCount++
+
+            println("for region $region ($x,$y) map=$mapFileId and land=$landFileId")
+        }
+
+        idx.setShort(0, mapCount)
+
+        val idxArray = ByteArray(idx.writerIndex())
+        idx.readBytes(idxArray)
+
+        cacheTo.put(0, 5, "map_index", idxArray)
+
+        cacheTo.index(0).update()
+        cacheTo.index(4).update()
+    }
+
+    private fun underlays(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
+        var highestFileId = -1
+        var biggestSize = 0
+        val buf = Unpooled.buffer()
+        buf.writeShort(0)
+
+        val configIndex = cacheFrom.index(2)
+        configIndex.cache()
+
+        val fromArchive = configIndex.archive(1)!!
+        for (file in fromArchive.files()) {
+            val data = file.data
+            if (data == null || data.size < 1) {
+                println("skipped underlay file ${file.id} (no data)")
+                buf.writeShort(-1)
+            } else {
+                val fileId = file.id
+                buf.writeShort(fileId)
+                buf.writeShort(data.size)
+                buf.writeBytes(data)
+                if (fileId > highestFileId)
+                    highestFileId = fileId
+                if (data.size > biggestSize)
+                    biggestSize = data.size
+            }
+        }
+
+        buf.setShort(0, highestFileId)
+
+        buf.readerIndex(0)
+        val array = ByteArray(buf.readableBytes())
+        buf.readBytes(array)
+
+        println("underlays highest $highestFileId and biggest was $biggestSize (total bytes=${array.size})")
+
+        cacheTo.put(0, 2, "underlays.dat", array)
+
+        cacheTo.index(0).update()
+    }
+
+    private fun overlays(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
+        var highestFileId = -1
+        var biggestSize = 0
+        val buf = Unpooled.buffer()
+        buf.writeShort(0)
+
+        val configIndex = cacheFrom.index(2)
+        configIndex.cache()
+
+        val fromArchive = configIndex.archive(4)!!
+        for (file in fromArchive.files()) {
+            val data = file.data
+            if (data == null || data.size < 1) {
+                println("skipped overlay file ${file.id} (no data)")
+                buf.writeShort(-1)
+            } else {
+                val fileId = file.id
+                buf.writeShort(fileId)
+                buf.writeShort(data.size)
+                buf.writeBytes(data)
+                if (fileId > highestFileId)
+                    highestFileId = fileId
+                if (data.size > biggestSize)
+                    biggestSize = data.size
+            }
+        }
+
+        buf.setShort(0, highestFileId)
+
+        buf.readerIndex(0)
+        val array = ByteArray(buf.readableBytes())
+        buf.readBytes(array)
+
+        println("overlays highest $highestFileId and biggest was $biggestSize (total bytes=${array.size})")
+
+        cacheTo.put(0, 2, "overlays.dat", array)
+
+        cacheTo.index(0).update()
     }
 
 }
