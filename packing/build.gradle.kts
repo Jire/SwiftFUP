@@ -45,3 +45,4 @@ fun execTask(
 
 execTask("tarnishPacker", "org.jire.swiftfup.packing.TarnishPacker")
 execTask("ethscapePacker", "org.jire.swiftfup.packing.EthscapePacker")
+execTask("roatzPacker", "org.jire.swiftfup.packing.RoatzPacker")
