@@ -4,8 +4,8 @@ plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
-repositories {
-    mavenCentral()
+kotlin {
+    jvmToolchain(17)
 }
 
 dependencies {
@@ -22,13 +22,6 @@ dependencies {
 
 application {
     mainClass.set("org.jire.swiftfup.server.Main")
-    applicationDefaultJvmArgs += arrayOf(
-        "-XX:+UseZGC",
-    )
-}
-
-kotlin {
-    jvmToolchain(17)
 }
 
 tasks.named<Jar>("jar").configure {

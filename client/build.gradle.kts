@@ -3,10 +3,6 @@ plugins {
     `maven-publish`
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     implementation(libs.netty)
     implementation(libs.fastutil)

@@ -16,5 +16,7 @@ pluginManagement {
 
 include(
     "server",
-    "client"
+    "client",
+
+    "packing"
 )
