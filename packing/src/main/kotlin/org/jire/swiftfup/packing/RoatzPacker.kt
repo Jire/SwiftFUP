@@ -7,23 +7,17 @@ import java.io.File
 
 object RoatzPacker {
 
-    private const val REBUILD = true
+    private const val REBUILD = false
 
     @JvmStatic
     fun main(args: Array<String>) {
         Index317.addMetaFiles("sounds_version", "sounds_crc")
         Index317.addMetaFiles("sprites_version", "sprites_crc")
 
-        val cachePath = "C:/Users/Administrator/roatpkzv6/"//"../server/cache/"
+        val cachePath = "../server/cache/"
         val cacheFrom = CacheLibrary.create("../server/cache213/")
         val cacheTo = CacheLibrary.create(cachePath)
 
-        if (false) {
-            println(cacheTo.index(0).archives().joinToString(","))
-            println(cacheTo.data(0, 9, "ClanVault/vault.png")!!.size)
-            println(cacheTo.index(0).archive(9)!!.fileIds().joinToString(","))
-            return
-        }
         if (REBUILD) {
             val rebuildDir = File("${cachePath}../rebuild/")
             rebuildDir.walkTopDown().forEach { it.delete() }
@@ -49,7 +43,7 @@ object RoatzPacker {
         indexBuf.writeShort(0)
 
         var amount = 0
-        for (soundFile in File("${cachePath}Sounds2").listFiles()!!) {
+        for (soundFile in File("${cachePath}Sounds").listFiles()!!) {
             val id = soundFile.nameWithoutExtension.toInt()
             val data = soundFile.readBytes()
 
@@ -76,8 +70,7 @@ object RoatzPacker {
         var amount = 0
         indexBuf.writeShort(amount)
 
-        val dirPath = "${cachePath}Sprites2/"
-        println("dirPath: \"$dirPath\"")
+        val dirPath = "${cachePath}Sprites/"
         File(dirPath)
             .walkTopDown()
             .forEach { file ->
@@ -114,7 +107,7 @@ object RoatzPacker {
     private fun data(cachePath: String, cacheTo: CacheLibrary) {
         val index = cacheTo.index(0)
 
-        val dirPath = "${cachePath}Data2/"
+        val dirPath = "${cachePath}Data/"
         File(dirPath)
             .walkTopDown()
             .forEach { file ->
