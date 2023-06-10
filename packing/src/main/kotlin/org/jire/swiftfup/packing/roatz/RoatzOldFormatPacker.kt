@@ -1,38 +1,19 @@
-package org.jire.swiftfup.packing
+package org.jire.swiftfup.packing.roatz
 
 import com.displee.cache.CacheLibrary
-import com.displee.cache.index.Index317
 import io.netty.buffer.Unpooled
 import java.io.File
 
-object RoatzPacker {
+internal object RoatzOldFormatPacker {
 
-    private const val REBUILD = false
+    private const val SOUNDS = true
+    private const val SPRITES = true
+    private const val DATA = true
 
-    @JvmStatic
-    fun main(args: Array<String>) {
-        Index317.addMetaFiles("sounds_version", "sounds_crc")
-        Index317.addMetaFiles("sprites_version", "sprites_crc")
-
-        val cachePath = "../server/cache/"
-        val cacheFrom = CacheLibrary.create("../server/cache213/")
-        val cacheTo = CacheLibrary.create(cachePath)
-
-        if (REBUILD) {
-            val rebuildDir = File("${cachePath}../rebuild/")
-            rebuildDir.walkTopDown().forEach { it.delete() }
-            cacheTo.rebuild(rebuildDir)
-            return
-        }
-
-        sounds(cachePath, cacheTo)
-        sprites(cachePath, cacheTo)
-        data(cachePath, cacheTo)
-
-        cacheTo.update()
-        cacheTo.close()
-
-        cacheFrom.close()
+    fun pack(cachePath: String, cacheTo: CacheLibrary) {
+        if (SOUNDS) sounds(cachePath, cacheTo)
+        if (SPRITES) sprites(cachePath, cacheTo)
+        if (DATA) data(cachePath, cacheTo)
     }
 
     private fun sounds(cachePath: String, cacheTo: CacheLibrary) {
