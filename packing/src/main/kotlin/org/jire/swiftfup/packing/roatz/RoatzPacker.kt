@@ -19,6 +19,9 @@ object RoatzPacker {
     private const val REBUILD_DIRECTORY_NAME = "rebuild"
     private const val REBUILD_DIRECTORY_PATH = "$CACHE_TO_PATH$REBUILD_DIRECTORY_NAME"
 
+    private const val SCAN_FOR_LARGE_FILES = false
+    private const val SCAN_FOR_LARGE_FILES_MIN_BYTES = 8192
+
     @JvmStatic
     fun main(args: Array<String>) {
         Index317.addMetaFiles("sounds_version", "sounds_crc")
@@ -26,6 +29,19 @@ object RoatzPacker {
 
         val cacheFrom = CacheLibrary.create(CACHE_FROM_PATH)
         val cacheTo = CacheLibrary.create(CACHE_TO_PATH)
+
+        if (SCAN_FOR_LARGE_FILES) {
+            for (index in cacheTo.indices()) {
+                for (archive in cacheTo.index(index.id).archives()) {
+                    for (file in archive.files()) {
+                        val fileSize = file.data?.size ?: -1
+                        if (fileSize >= SCAN_FOR_LARGE_FILES_MIN_BYTES)
+                            println("index ${index.id}: ${archive.id}:${file.id} size is $fileSize")
+                    }
+                }
+            }
+            return
+        }
 
         if (PACK_OLD_FORMAT) RoatzOldFormatPacker.pack(CACHE_TO_PATH, cacheTo)
         if (PACK_214_DATA) Roatz214DataPacker.pack(cacheFrom, cacheTo)

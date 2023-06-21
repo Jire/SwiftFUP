@@ -5,6 +5,7 @@ import io.netty.buffer.Unpooled
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import org.jire.swiftfup.packing.DefaultXteaRepository
+import org.jire.swiftfup.packing.GZipCompression
 import java.io.File
 import java.nio.file.Path
 
@@ -266,7 +267,7 @@ internal object Roatz214DataPacker {
         }
 
         DefaultXteaRepository.load(Path.of("..", "server", "cache214", "xteas.json"))
-        for ((region, xtea) in DefaultXteaRepository.map.int2ObjectEntrySet()) {
+        for ((region, xtea) in DefaultXteaRepository.map.toSortedMap()) {
             val mapFileId = fileId++
             val landFileId = fileId++
 
@@ -301,7 +302,9 @@ internal object Roatz214DataPacker {
         val idxArray = ByteArray(idx.writerIndex())
         idx.readBytes(idxArray)
 
-        cacheTo.put(0, 5, "map_index", idxArray)
+        val compressedArray = GZipCompression.compress(idxArray)
+
+        cacheTo.put(0, 5, "map_index", compressedArray)
 
         cacheTo.index(0).update()
         cacheTo.index(4).update()
@@ -334,11 +337,13 @@ internal object Roatz214DataPacker {
         val array = ByteArray(buf.readableBytes())
         buf.readBytes(array)
 
-        cacheTo.put(0, 2, "framebases.dat", array)
+        val compressedArray = GZipCompression.compress(array)
+
+        cacheTo.put(0, 2, "framebases.dat", compressedArray)
 
         cacheTo.index(0).update()
 
-        println("frame bases count $count and size ${array.size}")
+        println("frame bases count $count and raw size ${array.size}, compressed size ${compressedArray.size}")
     }
 
     private fun frames(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
