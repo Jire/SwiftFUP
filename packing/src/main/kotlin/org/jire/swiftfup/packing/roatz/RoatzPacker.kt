@@ -8,12 +8,12 @@ import java.nio.file.Path
 
 object RoatzPacker {
 
-    private const val PACK_OLD_FORMAT = false
-    private const val PACK_214_DATA = false
-    private const val PACK_TEXTURES = false
-
     private const val CACHE_FROM_PATH = "../server/cache214/"
     internal const val CACHE_TO_PATH = "../server/cache/"
+
+    private const val PACK_OLD_FORMAT = true
+    private const val PACK_214_DATA = true
+    private const val PACK_TEXTURES = false
 
     private const val REBUILD = true
     private const val REBUILD_DIRECTORY_NAME = "rebuild"
@@ -50,10 +50,15 @@ object RoatzPacker {
 
         if (REBUILD) {
             val rebuildFile = File(REBUILD_DIRECTORY_PATH)
-            if (rebuildFile.exists() && !rebuildFile.delete())
-                throw IllegalStateException("Failed to delete rebuild directory \"${REBUILD_DIRECTORY_PATH}\"")
-            if (!rebuildFile.mkdirs())
+            if (rebuildFile.exists()) {
+                rebuildFile.listFiles()?.forEach {
+                    if (!it.delete()) {
+                        throw IllegalStateException("Failed to delete rebuild directory file \"${it.name}\"")
+                    }
+                }
+            } else if (!rebuildFile.mkdirs()) {
                 throw IllegalStateException("Failed to create rebuild directory \"${REBUILD_DIRECTORY_PATH}\"")
+            }
 
             CacheLibrary.create(CACHE_TO_PATH).rebuild(rebuildFile)
         }

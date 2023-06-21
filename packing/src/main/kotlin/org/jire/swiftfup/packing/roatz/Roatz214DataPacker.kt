@@ -247,7 +247,6 @@ internal object Roatz214DataPacker {
     }
 
     private fun maps(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
-
         val idx = Unpooled.buffer()
         idx.writeShort(0)
 
