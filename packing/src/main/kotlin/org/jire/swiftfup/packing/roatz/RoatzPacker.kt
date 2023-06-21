@@ -3,24 +3,45 @@ package org.jire.swiftfup.packing.roatz
 import com.displee.cache.CacheLibrary
 import com.displee.cache.index.Index317
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 
 object RoatzPacker {
 
     private const val PACK_OLD_FORMAT = false
-    private const val PACK_214_DATA = true
-    private const val REBUILD = false
+    private const val PACK_214_DATA = false
+    private const val PACK_TEXTURES = false
+
+    private const val CACHE_FROM_PATH = "../server/cache214/"
+    internal const val CACHE_TO_PATH = "../server/cache/"
+
+    private const val REBUILD = true
+    private const val REBUILD_DIRECTORY_NAME = "rebuild"
+    private const val REBUILD_DIRECTORY_PATH = "$CACHE_TO_PATH$REBUILD_DIRECTORY_NAME"
 
     @JvmStatic
     fun main(args: Array<String>) {
         Index317.addMetaFiles("sounds_version", "sounds_crc")
         Index317.addMetaFiles("sprites_version", "sprites_crc")
 
-        val cachePath = "../server/cache/"
-        val cacheFrom = CacheLibrary.create("../server/cache214/")
-        val cacheTo = CacheLibrary.create(cachePath)
+        val cacheFrom = CacheLibrary.create(CACHE_FROM_PATH)
+        val cacheTo = CacheLibrary.create(CACHE_TO_PATH)
 
-        if (PACK_OLD_FORMAT) RoatzOldFormatPacker.pack(cachePath, cacheTo)
+        if (PACK_OLD_FORMAT) RoatzOldFormatPacker.pack(CACHE_TO_PATH, cacheTo)
         if (PACK_214_DATA) Roatz214DataPacker.pack(cacheFrom, cacheTo)
+
+        if (PACK_TEXTURES) {
+            cacheTo.put(0, 2, "textures.dat", Files.readAllBytes(Path.of("../server/textures.dat")))
+
+            //println(cacheTo.index(0).archive(6)!!.files().joinToString(", "))
+            cacheTo.index(0).archive(6)!!.clear()
+            for (file in File("../server/pink").listFiles()!!) {
+                val id = file.nameWithoutExtension.toInt()
+                cacheTo.put(0, 6, id, file.readBytes())
+            }
+
+            cacheTo.index(0).update()
+        }
 
         cacheTo.update()
         cacheTo.close()
@@ -28,9 +49,13 @@ object RoatzPacker {
         cacheFrom.close()
 
         if (REBUILD) {
-            val rebuildDir = File("${cachePath}../rebuild/")
-            rebuildDir.walkTopDown().forEach { it.delete() }
-            CacheLibrary.create(cachePath).rebuild(rebuildDir)
+            val rebuildFile = File(REBUILD_DIRECTORY_PATH)
+            if (rebuildFile.exists() && !rebuildFile.delete())
+                throw IllegalStateException("Failed to delete rebuild directory \"${REBUILD_DIRECTORY_PATH}\"")
+            if (!rebuildFile.mkdirs())
+                throw IllegalStateException("Failed to create rebuild directory \"${REBUILD_DIRECTORY_PATH}\"")
+
+            CacheLibrary.create(CACHE_TO_PATH).rebuild(rebuildFile)
         }
     }
 

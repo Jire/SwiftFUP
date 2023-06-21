@@ -2,7 +2,10 @@ package org.jire.swiftfup.packing.roatz
 
 import com.displee.cache.CacheLibrary
 import io.netty.buffer.Unpooled
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import org.jire.swiftfup.packing.DefaultXteaRepository
+import java.io.File
 import java.nio.file.Path
 
 internal object Roatz214DataPacker {
@@ -244,30 +247,46 @@ internal object Roatz214DataPacker {
     }
 
     private fun maps(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
-        DefaultXteaRepository.load(Path.of("..", "server", "cache214", "xteas.json"))
 
         val idx = Unpooled.buffer()
         idx.writeShort(0)
 
         var mapCount = 0
         var fileId = 0
+
+        val customMapArchives: Int2ObjectMap<ByteArray> = Int2ObjectOpenHashMap()
+        val customMapFiles = File("${RoatzPacker.CACHE_TO_PATH}map_custom").listFiles()
+        if (customMapFiles != null) {
+            for (file in customMapFiles) {
+                if (file.extension != "gz") continue
+
+                val archiveId = file.nameWithoutExtension.toInt()
+                val data = file.readBytes()
+                customMapArchives.put(archiveId, data)
+            }
+        }
+
+        DefaultXteaRepository.load(Path.of("..", "server", "cache214", "xteas.json"))
         for ((region, xtea) in DefaultXteaRepository.map.int2ObjectEntrySet()) {
+            val mapFileId = fileId++
+            val landFileId = fileId++
+
             val x = (region ushr 8) and 0xFF
             val y = region and 0xFF
 
-            val mapFileId = fileId++
             val mapName = "m${x}_$y"
-            val map = cacheFrom.data(5, mapName, 0)!!
-
-            val landFileId = fileId++
             val landName = "l${x}_$y"
-            val land = cacheFrom.data(5, landName, 0, xtea.key)!!
+
+            val mapData = customMapArchives.get(mapFileId)
+                ?: cacheFrom.data(5, mapName, 0)!!
+            val landData = customMapArchives.get(landFileId)
+                ?: cacheFrom.data(5, landName, 0, xtea.key)!!
 
             cacheTo.remove(4, mapFileId)
-            cacheTo.put(4, mapFileId, map)
+            cacheTo.put(4, mapFileId, mapData)
 
             cacheTo.remove(4, landFileId)
-            cacheTo.put(4, landFileId, land)
+            cacheTo.put(4, landFileId, landData)
 
             idx.writeShort(region)
             idx.writeShort(mapFileId)
