@@ -3,6 +3,7 @@ package org.jire.swiftfup.packing
 import com.displee.cache.CacheLibrary
 import io.netty.buffer.Unpooled
 import java.io.File
+import java.nio.file.Path
 
 object TarnishPacker {
 
@@ -46,6 +47,7 @@ object TarnishPacker {
         frameBases(cacheFrom, cacheTo)
         npc(cacheFrom, cacheTo)
         obj(cacheFrom, cacheTo)
+        maps(cacheFrom, cacheTo)
         items(cacheFrom, cacheTo)
         graphics(cacheFrom, cacheTo)
 
@@ -385,6 +387,52 @@ object TarnishPacker {
         cacheTo.put(0, 2, "spotanim.dat", array)
 
         cacheTo.index(0).update()
+    }
+
+    private fun maps(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
+        DefaultXteaRepository.load(Path.of("..", "server", "cache214", "xteas.json"))
+
+        val idx = Unpooled.buffer()
+        idx.writeShort(0)
+
+        var mapCount = 0
+        var fileId = 0
+        for ((region, xtea) in DefaultXteaRepository.map.int2ObjectEntrySet()) {
+            val x = (region ushr 8) and 0xFF
+            val y = region and 0xFF
+
+            val mapFileId = fileId++
+            val mapName = "m${x}_$y"
+            val map = cacheFrom.data(5, mapName, 0)!!
+
+            val landFileId = fileId++
+            val landName = "l${x}_$y"
+            val land = cacheFrom.data(5, landName, 0, xtea.key)!!
+
+            cacheTo.remove(4, mapFileId)
+            cacheTo.put(4, mapFileId, map)
+
+            cacheTo.remove(4, landFileId)
+            cacheTo.put(4, landFileId, land)
+
+            idx.writeShort(region)
+            idx.writeShort(mapFileId)
+            idx.writeShort(landFileId)
+
+            mapCount++
+
+            println("for region $region ($x,$y) map=$mapFileId and land=$landFileId")
+        }
+
+        idx.setShort(0, mapCount)
+
+        val idxArray = ByteArray(idx.writerIndex())
+        idx.readBytes(idxArray)
+
+        cacheTo.put(0, 5, "map_index", idxArray)
+
+        cacheTo.index(0).update()
+        cacheTo.index(4).update()
     }
 
 }
