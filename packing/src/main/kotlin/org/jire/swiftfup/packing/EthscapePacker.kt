@@ -3,6 +3,8 @@ package org.jire.swiftfup.packing
 import com.displee.cache.CacheLibrary
 import com.displee.cache.index.Index317
 import io.netty.buffer.Unpooled
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -12,42 +14,48 @@ import java.nio.file.Path
  */
 object EthscapePacker {
 
+    private const val WINDOWS_USERNAME = "Administrator"
+    private const val CACHE_PATH = "C:\\Users\\$WINDOWS_USERNAME\\.ethscape\\cache\\"
+
     private const val REBUILD = true
+    private const val REBUILD_DIRECTORY_NAME = "rebuild"
+    private const val REBUILD_DIRECTORY_PATH = "$CACHE_PATH$REBUILD_DIRECTORY_NAME"
 
     @JvmStatic
     fun main(args: Array<String>) {
-        val cachePath = "C:\\Users\\Administrator\\.ethscape\\cache\\"
-
         Index317.addMetaFiles("anims717_version", "anims717_crc")
         Index317.addMetaFiles("ethsprites_version", "ethsprites_crc")
         Index317.addMetaFiles("osrssprites_version", "osrssprites_crc")
 
-        val cacheTo = CacheLibrary.create(cachePath)
-        if (REBUILD) {
-            cacheTo.rebuild(File("${cachePath}rebuild"))
-            return
-        }
+        val cacheTo = CacheLibrary.create(CACHE_PATH)
 
-        cacheTo.mainFileSprites(cachePath)
+        cacheTo.mainFileSprites(CACHE_PATH)
 
         val cacheFrom = CacheLibrary.create("../server/cache213")
 
-/*        models(cacheFrom, cacheTo)
+        models(cacheFrom, cacheTo)
         items(cacheFrom, cacheTo)
         seq(cacheFrom, cacheTo)
         frameBases(cacheFrom, cacheTo)
         frames(cacheFrom, cacheTo)
         npc(cacheFrom, cacheTo)
         graphic(cacheFrom, cacheTo)
-        objects(cacheFrom, cacheTo)*/
-        /*varp(cacheFrom, cacheTo)
-        varbit(cacheFrom, cacheTo)*/
-        //maps(cacheFrom, cacheTo)
+        objects(cacheFrom, cacheTo)
+        varp(cacheFrom, cacheTo)
+        varbit(cacheFrom, cacheTo)
+        maps(cacheFrom, cacheTo)
         underlays(cacheFrom, cacheTo)
         overlays(cacheFrom, cacheTo)
 
         cacheTo.update()
         cacheTo.close()
+
+        if (REBUILD) {
+            val rebuildFile = File(REBUILD_DIRECTORY_PATH)
+            if (!rebuildFile.exists() && !rebuildFile.mkdirs())
+                throw IllegalStateException("Failed to create rebuild directory \"$REBUILD_DIRECTORY_PATH\"")
+            CacheLibrary.create(CACHE_PATH).rebuild(rebuildFile)
+        }
     }
 
     fun CacheLibrary.mainFileSprites(cachePath: String) {
@@ -71,9 +79,31 @@ object EthscapePacker {
         val indexTo = cacheTo.index(1)
 
         var highestId = 0
+
+        val customModelArchives: Int2ObjectMap<ByteArray> = Int2ObjectOpenHashMap()
+        val customModelFiles = File("${CACHE_PATH}index1").listFiles()
+        if (customModelFiles != null) {
+            for (file in customModelFiles) {
+                if (file.extension != "gz") continue
+
+                val archiveId = file.nameWithoutExtension.toInt()
+                val data = file.readBytes()
+                customModelArchives.put(archiveId, data)
+
+                cacheTo.remove(1, archiveId)
+                cacheTo.put(1, archiveId, data)
+
+                if (archiveId > highestId)
+                    highestId = archiveId
+            }
+        }
+
         for (archive in indexFrom.archives()) {
-            if (!archive.containsData()) continue
             val archiveId = archive.id
+
+            if (customModelArchives.containsKey(archiveId)) continue
+            if (!archive.containsData()) continue
+
             val data = cacheFrom.data(7, archiveId, 0) ?: continue
             cacheTo.remove(1, archiveId)
             cacheTo.put(1, archiveId, data)
@@ -468,30 +498,45 @@ object EthscapePacker {
     }
 
     private fun maps(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
-        DefaultXteaRepository.load()
-
         val idx = Unpooled.buffer()
         idx.writeShort(0)
 
         var mapCount = 0
         var fileId = 0
+
+        val customMapArchives: Int2ObjectMap<ByteArray> = Int2ObjectOpenHashMap()
+        val customMapFiles = File("${CACHE_PATH}index4").listFiles()
+        if (customMapFiles != null) {
+            for (file in customMapFiles) {
+                if (file.extension != "gz") continue
+
+                val archiveId = file.nameWithoutExtension.toInt()
+                val data = file.readBytes()
+                customMapArchives.put(archiveId, data)
+            }
+        }
+
+        DefaultXteaRepository.load()
         for ((region, xtea) in DefaultXteaRepository.map.int2ObjectEntrySet()) {
+            val mapFileId = fileId++
+            val landFileId = fileId++
+
             val x = (region ushr 8) and 0xFF
             val y = region and 0xFF
 
-            val mapFileId = fileId++
             val mapName = "m${x}_$y"
-            val map = cacheFrom.data(5, mapName, 0)!!
-
-            val landFileId = fileId++
             val landName = "l${x}_$y"
-            val land = cacheFrom.data(5, landName, 0, xtea.key)!!
+
+            val mapData = customMapArchives.get(mapFileId)
+                ?: cacheFrom.data(5, mapName, 0)!!
+            val landData = customMapArchives.get(landFileId)
+                ?: cacheFrom.data(5, landName, 0, xtea.key)!!
 
             cacheTo.remove(4, mapFileId)
-            cacheTo.put(4, mapFileId, map)
+            cacheTo.put(4, mapFileId, mapData)
 
             cacheTo.remove(4, landFileId)
-            cacheTo.put(4, landFileId, land)
+            cacheTo.put(4, landFileId, landData)
 
             idx.writeShort(region)
             idx.writeShort(mapFileId)
