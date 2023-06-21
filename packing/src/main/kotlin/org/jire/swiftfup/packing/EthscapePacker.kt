@@ -52,10 +52,15 @@ object EthscapePacker {
 
         if (REBUILD) {
             val rebuildFile = File(REBUILD_DIRECTORY_PATH)
-            if (rebuildFile.exists() && !rebuildFile.delete())
-                throw IllegalStateException("Failed to delete rebuild directory \"$REBUILD_DIRECTORY_PATH\"")
-            if (!rebuildFile.mkdirs())
-                throw IllegalStateException("Failed to create rebuild directory \"$REBUILD_DIRECTORY_PATH\"")
+            if (rebuildFile.exists()) {
+                rebuildFile.listFiles()?.forEach {
+                    if (!it.delete()) {
+                        throw IllegalStateException("Failed to delete rebuild directory file \"${it.name}\"")
+                    }
+                }
+            } else if (!rebuildFile.mkdirs()) {
+                throw IllegalStateException("Failed to create rebuild directory \"${REBUILD_DIRECTORY_PATH}\"")
+            }
 
             CacheLibrary.create(CACHE_PATH).rebuild(rebuildFile)
         }
