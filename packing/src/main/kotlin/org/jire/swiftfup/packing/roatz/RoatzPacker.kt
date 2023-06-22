@@ -4,8 +4,6 @@ import com.displee.cache.CacheLibrary
 import com.displee.cache.index.Index317
 import io.netty.buffer.Unpooled
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
 
 object RoatzPacker {
 
@@ -121,6 +119,7 @@ object RoatzPacker {
     fun main(args: Array<String>) {
         Index317.addMetaFiles("sounds_version", "sounds_crc")
         Index317.addMetaFiles("sprites_version", "sprites_crc")
+        Index317.addMetaFiles("osrs_sprites_version", "osrs_sprites_crc")
 
         val cacheFrom = CacheLibrary.create(CACHE_FROM_PATH)
         val cacheTo = CacheLibrary.create(CACHE_TO_PATH)
@@ -138,8 +137,34 @@ object RoatzPacker {
             return
         }
 
+        if (PACK_TEXTURES) {
+            val toIndexId = 7
+            val indexTo = if (cacheTo.exists(toIndexId)) cacheTo.index(toIndexId).apply { clear() }
+            else cacheTo.createIndex()
+
+            val indexFrom = cacheFrom.index(8)
+            indexFrom.cache()
+
+            for (archive in indexFrom.archives()) {
+                if (!archive.containsData()) {
+                    println("archive ${archive.id} doesn't contain data! (has ${archive.files().size} files)")
+                    continue
+                }
+
+                for (file in archive.files()) {
+                    val data = file.data!!
+
+                    println("put ${archive.id}:${file.id} with ${data.size} bytes")
+                    cacheTo.put(toIndexId, archive.id, file.id, data)
+                }
+            }
+
+            indexTo.update()
+        }
+
         if (DUMP_CUSTOM_MAPS) {
-            val data = cacheTo.data(0, 5, "map_index")
+            val cacheOriginal = CacheLibrary.create("../server/cache-roatz-original/")
+            val data = cacheOriginal.data(0, 5, "map_index")
             val buf = Unpooled.wrappedBuffer(data)
             val count = buf.readUnsignedShort()
             repeat(count) {
@@ -150,8 +175,8 @@ object RoatzPacker {
 
                 if (!customRegionIds.contains(region)) return@repeat
 
-                val mapData = cacheTo.data(4, mapFileId)!!
-                val landData = cacheTo.data(4, landFileId)!!
+                val mapData = cacheOriginal.data(4, mapFileId)!!
+                val landData = cacheOriginal.data(4, landFileId)!!
 
                 val x = (region ushr 8) and 0xFF
                 val y = region and 0xFF
@@ -166,19 +191,6 @@ object RoatzPacker {
 
         if (PACK_OLD_FORMAT) RoatzOldFormatPacker.pack(CACHE_TO_PATH, cacheTo)
         if (PACK_214_DATA) Roatz214DataPacker.pack(cacheFrom, cacheTo)
-
-        if (PACK_TEXTURES) {
-            cacheTo.put(0, 2, "textures.dat", Files.readAllBytes(Path.of("../server/textures.dat")))
-
-            //println(cacheTo.index(0).archive(6)!!.files().joinToString(", "))
-            cacheTo.index(0).archive(6)!!.clear()
-            for (file in File("../server/pink").listFiles()!!) {
-                val id = file.nameWithoutExtension.toInt()
-                cacheTo.put(0, 6, id, file.readBytes())
-            }
-
-            cacheTo.index(0).update()
-        }
 
         cacheTo.update()
         cacheTo.close()

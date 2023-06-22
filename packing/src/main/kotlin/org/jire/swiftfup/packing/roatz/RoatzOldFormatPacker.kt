@@ -2,7 +2,9 @@ package org.jire.swiftfup.packing.roatz
 
 import com.displee.cache.CacheLibrary
 import io.netty.buffer.Unpooled
+import java.awt.Toolkit
 import java.io.File
+import javax.swing.ImageIcon
 
 internal object RoatzOldFormatPacker {
 
@@ -62,6 +64,9 @@ internal object RoatzOldFormatPacker {
                     return@forEach
                 }
                 val data = file.readBytes()
+                val image = Toolkit.getDefaultToolkit().createImage(data)!!
+                val sprite = ImageIcon(image)
+
                 val cacheFileName = file.path.replace('\\', '/').replace(dirPath, "")
                 println("\"$cacheFileName\"")
                 //cacheTo.put(0, 9, cacheFileName, data)
@@ -70,6 +75,9 @@ internal object RoatzOldFormatPacker {
                 println("archive ID was ${archive.id} and hashName is ${archive.hashName}")
                 indexBuf.writeShort(archive.id)
                 indexBuf.writeInt(archive.hashName)
+
+                indexBuf.writeShort(sprite.iconWidth)
+                indexBuf.writeShort(sprite.iconHeight)
 
                 amount++
             }

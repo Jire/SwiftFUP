@@ -9,6 +9,8 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":common"))
+
     implementation(libs.netty)
     implementation(libs.fastutil)
     implementation(libs.zero.allocation.hashing)

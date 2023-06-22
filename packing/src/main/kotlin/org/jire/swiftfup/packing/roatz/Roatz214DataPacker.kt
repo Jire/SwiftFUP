@@ -2,8 +2,8 @@ package org.jire.swiftfup.packing.roatz
 
 import com.displee.cache.CacheLibrary
 import io.netty.buffer.Unpooled
+import org.jire.swiftfup.common.GzipCompression
 import org.jire.swiftfup.packing.DefaultXteaRepository
-import org.jire.swiftfup.packing.GZipCompression
 import java.io.File
 import java.nio.file.Path
 
@@ -18,6 +18,7 @@ internal object Roatz214DataPacker {
     private const val FRAME_BASES = true
     private const val FRAMES = true
     private const val ANIMATIONS = true
+    private const val TEXTURES = true
 
     fun pack(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
         if (MODELS) models(cacheFrom, cacheTo)
@@ -29,6 +30,7 @@ internal object Roatz214DataPacker {
         if (FRAME_BASES) frameBases(cacheFrom, cacheTo)
         if (FRAMES) frames(cacheFrom, cacheTo)
         if (ANIMATIONS) animations(cacheFrom, cacheTo)
+        if (TEXTURES) textures(cacheFrom, cacheTo)
     }
 
     private fun models(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
@@ -316,7 +318,7 @@ internal object Roatz214DataPacker {
         val idxArray = ByteArray(idx.writerIndex())
         idx.readBytes(idxArray)
 
-        val compressedArray = GZipCompression.compress(idxArray)
+        val compressedArray = GzipCompression.compress(idxArray)
 
         cacheTo.put(0, 5, "map_index", compressedArray)
 
@@ -351,7 +353,7 @@ internal object Roatz214DataPacker {
         val array = ByteArray(buf.readableBytes())
         buf.readBytes(array)
 
-        val compressedArray = GZipCompression.compress(array)
+        val compressedArray = GzipCompression.compress(array)
 
         cacheTo.put(0, 2, "framebases.dat", compressedArray)
 
@@ -438,13 +440,52 @@ internal object Roatz214DataPacker {
         val array = ByteArray(buf.readableBytes())
         buf.readBytes(array)
 
-        val compressedArray = GZipCompression.compress(array)
+        val compressedArray = GzipCompression.compress(array)
 
         println("seq highest $highestFileId and biggest was $biggestSize (total bytes=${array.size}, compressed bytes=${compressedArray.size})")
 
         cacheTo.put(0, 2, "seq.dat", compressedArray)
 
         cacheTo.index(0).update()
+    }
+
+    private fun textures(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
+        val fromTexturesIndex = cacheFrom.index(9)
+        fromTexturesIndex.cache()
+
+        val idx = Unpooled.buffer()
+        var highestFileId = 0
+        idx.writeShort(highestFileId) // placeholder
+
+        val archive = fromTexturesIndex.archive(0)!!
+        for (file in archive.files()) {
+            val id = file.id
+            val data = file.data!!
+            val dataSize = data.size
+            if (dataSize >= 65535)
+                throw IllegalStateException("Too large texture data for file $id (size=$dataSize)")
+
+            idx.writeShort(id)
+            idx.writeShort(dataSize)
+            idx.writeBytes(data)
+
+            //cacheTo.put(0, 6, "${id}.dat", data)
+
+            if (id > highestFileId) {
+                highestFileId = id
+            }
+        }
+
+        idx.setShort(0, highestFileId)
+        val idxArray = ByteArray(idx.readableBytes())
+        idx.readBytes(idxArray)
+        idx.release()
+
+        cacheTo.put(0, 2, "textures.dat", idxArray)
+
+        cacheTo.index(0).update()
+
+        println("packed textures highest=$highestFileId")
     }
 
 }

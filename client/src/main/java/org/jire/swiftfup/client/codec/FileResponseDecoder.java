@@ -12,18 +12,21 @@ import java.util.List;
  */
 public final class FileResponseDecoder extends ByteToMessageDecoder {
 
+    private int filePair = -1;
+    private int dataSize = -1;
+
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
-        if (!in.isReadable(7)) {
-            return;
+        if (filePair == -1) {
+            if (!in.isReadable(7)) {
+                return;
+            }
+
+            filePair = in.readUnsignedMedium();
+            dataSize = in.readInt();
         }
-        in.markReaderIndex();
 
-        final int filePair = in.readUnsignedMedium();
-
-        final int dataSize = in.readInt();
         if (!in.isReadable(dataSize)) {
-            in.resetReaderIndex();
             return;
         }
 
@@ -32,6 +35,9 @@ public final class FileResponseDecoder extends ByteToMessageDecoder {
 
         final FileResponse fileResponse = new FileResponse(filePair, data);
         out.add(fileResponse);
+
+        filePair = -1;
+        dataSize = -1;
     }
 
 }

@@ -1,10 +1,10 @@
-package org.jire.swiftfup.packing
+package org.jire.swiftfup.common
 
 import java.io.ByteArrayOutputStream
 import java.util.zip.Deflater
 import java.util.zip.GZIPOutputStream
 
-object GZipCompression {
+object GzipCompression {
 
     fun compress(array: ByteArray, compressionLevel: Int = Deflater.BEST_COMPRESSION): ByteArray {
         ByteArrayOutputStream().use { bout ->

@@ -7,6 +7,8 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":common"))
+
     implementation(libs.fastutil)
 
     implementation(libs.rs.cache.library)

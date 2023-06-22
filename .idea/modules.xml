@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/common/SwiftFUP.common.main.iml" filepath="$PROJECT_DIR$/.idea/modules/common/SwiftFUP.common.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/packing/SwiftFUP.packing.main.iml" filepath="$PROJECT_DIR$/.idea/modules/packing/SwiftFUP.packing.main.iml" />
     </modules>
   </component>
