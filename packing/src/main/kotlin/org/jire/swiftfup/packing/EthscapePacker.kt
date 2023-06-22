@@ -21,6 +21,13 @@ object EthscapePacker {
     private const val REBUILD_DIRECTORY_NAME = "rebuild"
     private const val REBUILD_DIRECTORY_PATH = "$CACHE_PATH$REBUILD_DIRECTORY_NAME"
 
+    private const val DUMP_CUSTOM_MAPS = true
+    const val DUMP_CUSTOM_MAPS_PATH = "ethscape_custom_maps/"
+
+    val customRegionIds = intArrayOf(
+
+    )
+
     @JvmStatic
     fun main(args: Array<String>) {
         Index317.addMetaFiles("anims717_version", "anims717_crc")
@@ -32,6 +39,33 @@ object EthscapePacker {
         cacheTo.mainFileSprites(CACHE_PATH)
 
         val cacheFrom = CacheLibrary.create("../server/cache213")
+
+        if (DUMP_CUSTOM_MAPS) {
+            val cacheOriginal = CacheLibrary.create("../server/cache-ethscape-original/")
+            val data = cacheOriginal.data(0, 5, "map_index")
+            val buf = Unpooled.wrappedBuffer(data)
+            val count = buf.readUnsignedShort()
+            repeat(count) {
+                val region = buf.readUnsignedShort()
+
+                val mapFileId = buf.readUnsignedShort()
+                val landFileId = buf.readUnsignedShort()
+
+                if (!customRegionIds.contains(region)) return@repeat
+
+                val mapData = cacheOriginal.data(4, mapFileId)!!
+                val landData = cacheOriginal.data(4, landFileId)!!
+
+                val x = (region ushr 8) and 0xFF
+                val y = region and 0xFF
+
+                val mapName = "${DUMP_CUSTOM_MAPS_PATH}m${x}_$y"
+                val landName = "${DUMP_CUSTOM_MAPS_PATH}l${x}_$y"
+
+                File(mapName).writeBytes(mapData)
+                File(landName).writeBytes(landData)
+            }
+        }
 
         models(cacheFrom, cacheTo)
         items(cacheFrom, cacheTo)
@@ -512,20 +546,38 @@ object EthscapePacker {
         var mapCount = 0
         var fileId = 0
 
-        val customMapArchives: Int2ObjectMap<ByteArray> = Int2ObjectOpenHashMap()
-        val customMapFiles = File("${CACHE_PATH}index4").listFiles()
-        if (customMapFiles != null) {
-            for (file in customMapFiles) {
-                if (file.extension != "gz") continue
+        for (region in customRegionIds) {
+            val mapFileId = fileId++
+            val landFileId = fileId++
 
-                val archiveId = file.nameWithoutExtension.toInt()
-                val data = file.readBytes()
-                customMapArchives.put(archiveId, data)
-            }
+            val x = (region ushr 8) and 0xFF
+            val y = region and 0xFF
+
+            val mapName = "${DUMP_CUSTOM_MAPS_PATH}m${x}_$y"
+            val landName = "${DUMP_CUSTOM_MAPS_PATH}l${x}_$y"
+
+            val mapData = File(mapName).readBytes()
+            val landData = File(landName).readBytes()
+
+            cacheTo.remove(4, mapFileId)
+            cacheTo.put(4, mapFileId, mapData)
+
+            cacheTo.remove(4, landFileId)
+            cacheTo.put(4, landFileId, landData)
+
+            idx.writeShort(region)
+            idx.writeShort(mapFileId)
+            idx.writeShort(landFileId)
+
+            mapCount++
+
+            println("for custom region $region ($x,$y) map=$mapFileId and land=$landFileId")
         }
 
         DefaultXteaRepository.load()
         for ((region, xtea) in DefaultXteaRepository.map.int2ObjectEntrySet()) {
+            if (customRegionIds.contains(region)) continue
+
             val mapFileId = fileId++
             val landFileId = fileId++
 
@@ -535,10 +587,8 @@ object EthscapePacker {
             val mapName = "m${x}_$y"
             val landName = "l${x}_$y"
 
-            val mapData = customMapArchives.get(mapFileId)
-                ?: cacheFrom.data(5, mapName, 0)!!
-            val landData = customMapArchives.get(landFileId)
-                ?: cacheFrom.data(5, landName, 0, xtea.key)!!
+            val mapData = cacheFrom.data(5, mapName, 0)!!
+            val landData = cacheFrom.data(5, landName, 0, xtea.key)!!
 
             cacheTo.remove(4, mapFileId)
             cacheTo.put(4, mapFileId, mapData)
