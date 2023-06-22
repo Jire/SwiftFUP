@@ -424,9 +424,11 @@ internal object Roatz214DataPacker {
         val array = ByteArray(buf.readableBytes())
         buf.readBytes(array)
 
-        println("seq highest $highestFileId and biggest was $biggestSize (total bytes=${array.size})")
+        val compressedArray = GZipCompression.compress(array)
 
-        cacheTo.put(0, 2, "seq.dat", array)
+        println("seq highest $highestFileId and biggest was $biggestSize (total bytes=${array.size}, compressed bytes=${compressedArray.size})")
+
+        cacheTo.put(0, 2, "seq.dat", compressedArray)
 
         cacheTo.index(0).update()
     }
