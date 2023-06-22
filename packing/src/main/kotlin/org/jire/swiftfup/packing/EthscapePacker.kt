@@ -25,7 +25,7 @@ object EthscapePacker {
     const val DUMP_CUSTOM_MAPS_PATH = "ethscape_custom_maps/"
 
     val customRegionIds = intArrayOf(
-
+        7991, 7992, 7993, 8249, 8250, 8248, 8247, 8504, 8527, 8528, 10537, 7480, 10569
     )
 
     @JvmStatic
