@@ -14,7 +14,7 @@ import java.nio.file.Path
  */
 object EthscapePacker {
 
-    private const val WINDOWS_USERNAME = "Administrator"
+    private const val WINDOWS_USERNAME = "Heynd"
     private const val CACHE_PATH = "C:\\Users\\$WINDOWS_USERNAME\\.ethscape\\cache\\"
 
     private const val REBUILD = true
@@ -33,6 +33,7 @@ object EthscapePacker {
         Index317.addMetaFiles("anims717_version", "anims717_crc")
         Index317.addMetaFiles("ethsprites_version", "ethsprites_crc")
         Index317.addMetaFiles("osrssprites_version", "osrssprites_crc")
+        Index317.addMetaFiles("osrstextures_version", "osrstextures_crc")
 
         val cacheTo = CacheLibrary.create(CACHE_PATH)
 
@@ -67,7 +68,32 @@ object EthscapePacker {
             }
         }
 
-        models(cacheFrom, cacheTo)
+        if (true) {
+            val toIndexId = 8
+            val indexTo = if (cacheTo.exists(toIndexId)) cacheTo.index(toIndexId).apply { clear() }
+            else cacheTo.createIndex()
+
+            val indexFrom = cacheFrom.index(8)
+            indexFrom.cache()
+
+            for (archive in indexFrom.archives()) {
+                if (!archive.containsData()) {
+                    println("archive ${archive.id} doesn't contain data! (has ${archive.files().size} files)")
+                    continue
+                }
+
+                for (file in archive.files()) {
+                    val data = file.data!!
+
+                    println("put ${archive.id}:${file.id} with ${data.size} bytes")
+                    cacheTo.put(toIndexId, archive.id, file.id, data)
+                }
+            }
+
+            indexTo.update()
+        }
+
+        /*models(cacheFrom, cacheTo)
         items(cacheFrom, cacheTo)
         seq(cacheFrom, cacheTo)
         frameBases(cacheFrom, cacheTo)
@@ -79,7 +105,8 @@ object EthscapePacker {
         varbit(cacheFrom, cacheTo)
         maps(cacheFrom, cacheTo)
         underlays(cacheFrom, cacheTo)
-        overlays(cacheFrom, cacheTo)
+        overlays(cacheFrom, cacheTo)*/
+        textures(cacheFrom, cacheTo)
 
         cacheTo.update()
         cacheTo.close()
@@ -694,6 +721,45 @@ object EthscapePacker {
         cacheTo.put(0, 2, "overlays.dat", array)
 
         cacheTo.index(0).update()
+    }
+
+    private fun textures(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
+        val fromTexturesIndex = cacheFrom.index(9)
+        fromTexturesIndex.cache()
+
+        val idx = Unpooled.buffer()
+        var highestFileId = 0
+        idx.writeShort(highestFileId) // placeholder
+
+        val archive = fromTexturesIndex.archive(0)!!
+        for (file in archive.files()) {
+            val id = file.id
+            val data = file.data!!
+            val dataSize = data.size
+            if (dataSize >= 65535)
+                throw IllegalStateException("Too large texture data for file $id (size=$dataSize)")
+
+            idx.writeShort(id)
+            idx.writeShort(dataSize)
+            idx.writeBytes(data)
+
+            //cacheTo.put(0, 6, "${id}.dat", data)
+
+            if (id > highestFileId) {
+                highestFileId = id
+            }
+        }
+
+        idx.setShort(0, highestFileId)
+        val idxArray = ByteArray(idx.readableBytes())
+        idx.readBytes(idxArray)
+        idx.release()
+
+        cacheTo.put(0, 2, "textures.dat", idxArray)
+
+        cacheTo.index(0).update()
+
+        println("packed textures highest=$highestFileId")
     }
 
 }
