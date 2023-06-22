@@ -2,8 +2,6 @@ package org.jire.swiftfup.packing.roatz
 
 import com.displee.cache.CacheLibrary
 import io.netty.buffer.Unpooled
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import org.jire.swiftfup.packing.DefaultXteaRepository
 import org.jire.swiftfup.packing.GZipCompression
 import java.io.File
@@ -254,20 +252,38 @@ internal object Roatz214DataPacker {
         var mapCount = 0
         var fileId = 0
 
-        val customMapArchives: Int2ObjectMap<ByteArray> = Int2ObjectOpenHashMap()
-        val customMapFiles = File("${RoatzPacker.CACHE_TO_PATH}map_custom").listFiles()
-        if (customMapFiles != null) {
-            for (file in customMapFiles) {
-                if (file.extension != "gz") continue
+        for (region in RoatzPacker.customRegionIds) {
+            val mapFileId = fileId++
+            val landFileId = fileId++
 
-                val archiveId = file.nameWithoutExtension.toInt()
-                val data = file.readBytes()
-                customMapArchives.put(archiveId, data)
-            }
+            val x = (region ushr 8) and 0xFF
+            val y = region and 0xFF
+
+            val mapName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}m${x}_$y"
+            val landName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}l${x}_$y"
+
+            val mapData = File(mapName).readBytes()
+            val landData = File(landName).readBytes()
+
+            cacheTo.remove(4, mapFileId)
+            cacheTo.put(4, mapFileId, mapData)
+
+            cacheTo.remove(4, landFileId)
+            cacheTo.put(4, landFileId, landData)
+
+            idx.writeShort(region)
+            idx.writeShort(mapFileId)
+            idx.writeShort(landFileId)
+
+            mapCount++
+
+            println("for custom region $region ($x,$y) map=$mapFileId and land=$landFileId")
         }
 
         DefaultXteaRepository.load(Path.of("..", "server", "cache214", "xteas.json"))
         for ((region, xtea) in DefaultXteaRepository.map.toSortedMap()) {
+            if (RoatzPacker.customRegionIds.contains(region)) continue
+
             val mapFileId = fileId++
             val landFileId = fileId++
 
@@ -277,10 +293,8 @@ internal object Roatz214DataPacker {
             val mapName = "m${x}_$y"
             val landName = "l${x}_$y"
 
-            val mapData = customMapArchives.get(mapFileId)
-                ?: cacheFrom.data(5, mapName, 0)!!
-            val landData = customMapArchives.get(landFileId)
-                ?: cacheFrom.data(5, landName, 0, xtea.key)!!
+            val mapData = cacheFrom.data(5, mapName, 0)!!
+            val landData = cacheFrom.data(5, landName, 0, xtea.key)!!
 
             cacheTo.remove(4, mapFileId)
             cacheTo.put(4, mapFileId, mapData)
