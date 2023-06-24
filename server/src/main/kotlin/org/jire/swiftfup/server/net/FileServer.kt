@@ -46,7 +46,7 @@ class FileServer(
         )
 
         try {
-            childOption(ChannelOption.IP_TOS, 0b100_000)
+            childOption(ChannelOption.IP_TOS, 0b100_000_10)
         } catch (e: Exception) {
             e.printStackTrace()
         }

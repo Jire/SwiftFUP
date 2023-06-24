@@ -71,7 +71,7 @@ public final class FileClient {
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120_000);
         try {
             // unsupported on older Windows versions (2003 and XP)
-            bootstrap.option(ChannelOption.IP_TOS, 0b100_000);
+            bootstrap.option(ChannelOption.IP_TOS, 0b100_000_10);
         } catch (final Exception e) {
             e.printStackTrace();
         }
