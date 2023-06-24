@@ -64,6 +64,18 @@ public final class FileClient {
     public Channel connect(final boolean reconnect) {
         final ChannelHandler handler =
                 new FileClientChannelInitializer(getFileRequests(), reconnect);
+
+        final Bootstrap bootstrap = this.bootstrap
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120_000);
+        try {
+            // unsupported on older Windows versions (2003 and XP)
+            bootstrap.option(ChannelOption.IP_TOS, 0b100_000);
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+
         final Channel channel = bootstrap
                 .handler(handler)
                 .connect()
