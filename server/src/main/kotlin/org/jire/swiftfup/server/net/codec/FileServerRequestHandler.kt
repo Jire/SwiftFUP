@@ -26,6 +26,18 @@ class FileServerRequestHandler(
 
     override fun channelReadComplete(ctx: ChannelHandlerContext) {
         ctx.flush()
+
+        val channel = ctx.channel()
+        if (!channel.isWritable) {
+            channel.config().isAutoRead = false
+        }
+    }
+
+    override fun channelWritabilityChanged(ctx: ChannelHandlerContext) {
+        val channel = ctx.channel()
+        if (channel.isWritable) {
+            channel.config().isAutoRead = true
+        }
     }
 
     @Deprecated("Deprecated in Java")

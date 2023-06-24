@@ -5,9 +5,7 @@ import io.netty.channel.ChannelOption
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.ServerChannel
 import io.netty.channel.WriteBufferWaterMark
-import io.netty.channel.epoll.Epoll
-import io.netty.channel.epoll.EpollEventLoopGroup
-import io.netty.channel.epoll.EpollServerSocketChannel
+import io.netty.channel.epoll.*
 import io.netty.channel.kqueue.KQueue
 import io.netty.channel.kqueue.KQueueEventLoopGroup
 import io.netty.channel.kqueue.KQueueServerSocketChannel
@@ -31,23 +29,29 @@ class FileServer(
     private val channelClass: Class<out ServerChannel> = serverChannelClass(parentGroup)
 ) {
 
-    private fun createBootstrap(): ServerBootstrap = ServerBootstrap()
-        .group(parentGroup, childGroup)
-        .channel(channelClass)
+    private fun createBootstrap(): ServerBootstrap = ServerBootstrap().apply {
+        group(parentGroup, childGroup)
+        channel(channelClass)
 
-        .childOption(ChannelOption.SO_KEEPALIVE, true)
-        .childOption(ChannelOption.TCP_NODELAY, true)
-        .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120_000)
+        childOption(ChannelOption.SO_KEEPALIVE, true)
+        childOption(ChannelOption.TCP_NODELAY, true)
+        childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120_000)
 
-        .childOption(ChannelOption.SO_SNDBUF, 65536)
-        .childOption(ChannelOption.SO_RCVBUF, 65536)
+        childOption(ChannelOption.SO_SNDBUF, 2 shl 15)
+        childOption(ChannelOption.SO_RCVBUF, 2 shl 15)
 
-        .childOption(
+        childOption(
             ChannelOption.WRITE_BUFFER_WATER_MARK,
-            WriteBufferWaterMark(8192, 131072)
+            WriteBufferWaterMark(2 shl 18, 2 shl 20)
         )
 
-        .childHandler(FileServerChannelInitializer(fileRequestResponses))
+        childHandler(FileServerChannelInitializer(fileRequestResponses))
+
+        if (parentGroup is EpollEventLoopGroup) {
+            // necessary to support disabling auto-read
+            childOption(EpollChannelOption.EPOLL_MODE, EpollMode.LEVEL_TRIGGERED)
+        }
+    }
 
     fun start(vararg ports: Int, print: Boolean = true) = createBootstrap().run {
         if (print) println("[Binding to ports]")
