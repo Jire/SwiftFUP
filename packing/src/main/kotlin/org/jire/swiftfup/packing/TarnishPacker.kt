@@ -1,17 +1,20 @@
 package org.jire.swiftfup.packing
 
 import com.displee.cache.CacheLibrary
+import com.displee.cache.index.Index317
 import io.netty.buffer.Unpooled
 import java.io.File
 import java.nio.file.Path
 
 object TarnishPacker {
 
-    private const val REBUILD = true
+    private const val REBUILD = false
     private const val SPEC_BAR_MODELS = false
 
     @JvmStatic
     fun main(args: Array<String>) {
+        Index317.addMetaFiles("osrs_sprites_version", "osrs_sprites_crc")
+
         val cachePath = "../server/cache/"
         if (SPEC_BAR_MODELS) {
             val cacheFrom = CacheLibrary.create("../server/cache-tarnishps/")
@@ -41,6 +44,31 @@ object TarnishPacker {
             return
         }
 
+        if (true) {
+            val toIndexId = 5
+            val indexTo = if (cacheTo.exists(toIndexId)) cacheTo.index(toIndexId).apply { clear() }
+            else cacheTo.createIndex()
+
+            val indexFrom = cacheFrom.index(8)
+            indexFrom.cache()
+
+            for (archive in indexFrom.archives()) {
+                if (!archive.containsData()) {
+                    println("archive ${archive.id} doesn't contain data! (has ${archive.files().size} files)")
+                    continue
+                }
+
+                for (file in archive.files()) {
+                    val data = file.data!!
+
+                    println("put ${archive.id}:${file.id} with ${data.size} bytes")
+                    cacheTo.put(toIndexId, archive.id, file.id, data)
+                }
+            }
+
+            indexTo.update()
+        }
+
         models(cacheFrom, cacheTo)
         seq(cacheFrom, cacheTo)
         frames(cacheFrom, cacheTo)
@@ -48,6 +76,9 @@ object TarnishPacker {
         npc(cacheFrom, cacheTo)
         obj(cacheFrom, cacheTo)
         maps(cacheFrom, cacheTo)
+        underlays(cacheFrom, cacheTo)
+        overlays(cacheFrom, cacheTo)
+        textures(cacheFrom, cacheTo)
         items(cacheFrom, cacheTo)
         graphics(cacheFrom, cacheTo)
 
@@ -294,6 +325,125 @@ object TarnishPacker {
         cacheTo.index(0).update()
 
         println("object highest $highestFileId")
+    }
+
+    private fun underlays(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
+        var highestFileId = -1
+        var biggestSize = 0
+        val buf = Unpooled.buffer()
+        buf.writeShort(0)
+
+        val configIndex = cacheFrom.index(2)
+        configIndex.cache()
+
+        val fromArchive = configIndex.archive(1)!!
+        for (file in fromArchive.files()) {
+            val data = file.data
+            if (data == null || data.size < 1) {
+                println("skipped underlay file ${file.id} (no data)")
+                buf.writeShort(-1)
+            } else {
+                val fileId = file.id
+                buf.writeShort(fileId)
+                buf.writeShort(data.size)
+                buf.writeBytes(data)
+                if (fileId > highestFileId)
+                    highestFileId = fileId
+                if (data.size > biggestSize)
+                    biggestSize = data.size
+            }
+        }
+
+        buf.setShort(0, highestFileId)
+
+        buf.readerIndex(0)
+        val array = ByteArray(buf.readableBytes())
+        buf.readBytes(array)
+
+        println("underlays highest $highestFileId and biggest was $biggestSize (total bytes=${array.size})")
+
+        cacheTo.put(0, 2, "underlays.dat", array)
+
+        cacheTo.index(0).update()
+    }
+
+    private fun overlays(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
+        var highestFileId = -1
+        var biggestSize = 0
+        val buf = Unpooled.buffer()
+        buf.writeShort(0)
+
+        val configIndex = cacheFrom.index(2)
+        configIndex.cache()
+
+        val fromArchive = configIndex.archive(4)!!
+        for (file in fromArchive.files()) {
+            val data = file.data
+            if (data == null || data.size < 1) {
+                println("skipped overlay file ${file.id} (no data)")
+                buf.writeShort(-1)
+            } else {
+                val fileId = file.id
+                buf.writeShort(fileId)
+                buf.writeShort(data.size)
+                buf.writeBytes(data)
+                if (fileId > highestFileId)
+                    highestFileId = fileId
+                if (data.size > biggestSize)
+                    biggestSize = data.size
+            }
+        }
+
+        buf.setShort(0, highestFileId)
+
+        buf.readerIndex(0)
+        val array = ByteArray(buf.readableBytes())
+        buf.readBytes(array)
+
+        println("overlays highest $highestFileId and biggest was $biggestSize (total bytes=${array.size})")
+
+        cacheTo.put(0, 2, "overlays.dat", array)
+
+        cacheTo.index(0).update()
+    }
+
+    private fun textures(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
+        val fromTexturesIndex = cacheFrom.index(9)
+        fromTexturesIndex.cache()
+
+        val idx = Unpooled.buffer()
+        var highestFileId = 0
+        idx.writeShort(highestFileId) // placeholder
+
+        val archive = fromTexturesIndex.archive(0)!!
+        for (file in archive.files()) {
+            val id = file.id
+            val data = file.data!!
+            val dataSize = data.size
+            if (dataSize >= 65535)
+                throw IllegalStateException("Too large texture data for file $id (size=$dataSize)")
+
+            idx.writeShort(id)
+            idx.writeShort(dataSize)
+            idx.writeBytes(data)
+
+            //cacheTo.put(0, 6, "${id}.dat", data)
+
+            if (id > highestFileId) {
+                highestFileId = id
+            }
+        }
+
+        idx.setShort(0, highestFileId)
+        val idxArray = ByteArray(idx.readableBytes())
+        idx.readBytes(idxArray)
+        idx.release()
+
+        cacheTo.put(0, 2, "textures.dat", idxArray)
+
+        cacheTo.index(0).update()
+
+        println("packed textures highest=$highestFileId")
     }
 
     private fun items(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
