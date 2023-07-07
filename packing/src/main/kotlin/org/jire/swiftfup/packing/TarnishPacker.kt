@@ -61,7 +61,7 @@ object TarnishPacker {
                 for (file in archive.files()) {
                     val data = file.data!!
 
-                    println("put ${archive.id}:${file.id} with ${data.size} bytes")
+                    //println("put ${archive.id}:${file.id} with ${data.size} bytes")
                     cacheTo.put(toIndexId, archive.id, file.id, data)
                 }
             }
@@ -229,8 +229,6 @@ object TarnishPacker {
     }
 
     private fun npc(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
-        var highestFileId = -1
-
         val idx = Unpooled.buffer()
         idx.writeShort(0)
 
@@ -240,22 +238,18 @@ object TarnishPacker {
         configIndex.cache()
 
         val fromArchive = configIndex.archive(9)!!
-        for (file in fromArchive.files()) {
-            val data = file.data!!
-            val dataSize = data.size
+        val highestFileId = fromArchive.fileIds().max()
+        for (fileId in 0..highestFileId) {
+            val file = fromArchive.file(fileId)
+            val data = file?.data
+            val dataSize = data?.size ?: 0
             if (dataSize < 1) {
                 idx.writeShort(0)
-                throw IllegalStateException("NPC skip ${file.id}")
+                println("WARNING: NPC skip $fileId")
             } else {
-                val fileId = file.id
-
                 if (dataSize >= 65535) throw IllegalStateException("TOO LARGE NPC size $dataSize for ID $fileId")
                 idx.writeShort(dataSize)
                 dat.writeBytes(data)
-
-                if (fileId > highestFileId) {
-                    highestFileId = fileId
-                }
             }
         }
 
