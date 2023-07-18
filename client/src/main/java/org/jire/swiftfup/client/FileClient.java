@@ -1,10 +1,7 @@
 package org.jire.swiftfup.client;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
@@ -40,9 +37,16 @@ public final class FileClient {
         bootstrap = new Bootstrap()
                 .channel(channelClass)
                 .group(group)
+                .option(ChannelOption.SO_KEEPALIVE, true)
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120_000)
                 .remoteAddress(host, port);
+        try {
+            // unsupported on older Windows versions (2003 and XP)
+            bootstrap.option(ChannelOption.IP_TOS, 0b100_000_10);
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public FileRequests getFileRequests() {
@@ -61,24 +65,18 @@ public final class FileClient {
         return channel != null && channel.isOpen();
     }
 
-    public Channel connect(final boolean reconnect) {
+    public ChannelFuture createChannelFuture(final boolean reconnect) {
         final ChannelHandler handler =
                 new FileClientChannelInitializer(getFileRequests(), reconnect);
 
-        final Bootstrap bootstrap = this.bootstrap
-                .option(ChannelOption.SO_KEEPALIVE, true)
-                .option(ChannelOption.TCP_NODELAY, true)
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120_000);
-        try {
-            // unsupported on older Windows versions (2003 and XP)
-            bootstrap.option(ChannelOption.IP_TOS, 0b100_000_10);
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-
-        final Channel channel = bootstrap
+        final Bootstrap bootstrap = this.bootstrap;
+        return bootstrap
                 .handler(handler)
-                .connect()
+                .connect();
+    }
+
+    public Channel connect(final boolean reconnect) {
+        final Channel channel = createChannelFuture(reconnect)
                 .syncUninterruptibly()
                 .channel();
 

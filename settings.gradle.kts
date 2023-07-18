@@ -5,6 +5,7 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
         gradlePluginPortal()
+        maven("https://repo.runelite.net/")
     }
 }
 

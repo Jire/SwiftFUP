@@ -17,6 +17,8 @@ dependencies {
     implementation(libs.netty)
 
     implementation("com.google.code.gson:gson:2.10.1")
+
+    implementation("net.runelite:cache:1.9.8")
 }
 
 val defaultJvmArgs = arrayOf(
@@ -52,3 +54,4 @@ fun execTask(
 execTask("tarnishPacker", "org.jire.swiftfup.packing.TarnishPacker")
 execTask("ethscapePacker", "org.jire.swiftfup.packing.EthscapePacker")
 execTask("roatzPacker", "org.jire.swiftfup.packing.roatz.RoatzPacker")
+execTask("kozaroPacker", "org.jire.swiftfup.packing.KozaroPacker")
