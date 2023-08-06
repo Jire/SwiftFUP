@@ -2,7 +2,7 @@
 slf4j = "2.0.7"
 
 [libraries]
-netty = { module = "io.netty:netty-all", version = "4.1.94.Final" }
+netty = { module = "io.netty:netty-all", version = "4.1.96.Final" }
 fastutil = { module = "it.unimi.dsi:fastutil", version = "8.5.12" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
