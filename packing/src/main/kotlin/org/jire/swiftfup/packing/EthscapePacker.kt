@@ -17,7 +17,7 @@ object EthscapePacker {
     private const val WINDOWS_USERNAME = "Heynd"
     private const val CACHE_PATH = "C:\\Users\\$WINDOWS_USERNAME\\.ethscape\\cache\\"
 
-    private const val REBUILD = true
+    private const val REBUILD = false
     private const val REBUILD_DIRECTORY_NAME = "rebuild"
     private const val REBUILD_DIRECTORY_PATH = "$CACHE_PATH$REBUILD_DIRECTORY_NAME"
 

@@ -11,7 +11,7 @@ object RoatzPacker {
     internal const val CACHE_TO_PATH = "../server/cache/"
 
     private const val PACK_OLD_FORMAT = true
-    private const val PACK_214_DATA = true
+    private const val PACK_OSRS_DATA = true
     private const val PACK_TEXTURES = true
 
     private const val REBUILD = true
@@ -137,31 +137,6 @@ object RoatzPacker {
             return
         }
 
-        if (PACK_TEXTURES) {
-            val toIndexId = 7
-            val indexTo = if (cacheTo.exists(toIndexId)) cacheTo.index(toIndexId).apply { clear() }
-            else cacheTo.createIndex()
-
-            val indexFrom = cacheFrom.index(8)
-            indexFrom.cache()
-
-            for (archive in indexFrom.archives()) {
-                if (!archive.containsData()) {
-                    println("archive ${archive.id} doesn't contain data! (has ${archive.files().size} files)")
-                    continue
-                }
-
-                for (file in archive.files()) {
-                    val data = file.data!!
-
-                    println("put ${archive.id}:${file.id} with ${data.size} bytes")
-                    cacheTo.put(toIndexId, archive.id, file.id, data)
-                }
-            }
-
-            indexTo.update()
-        }
-
         if (DUMP_CUSTOM_MAPS) {
             val cacheOriginal = CacheLibrary.create("../server/cache-roatz-original/")
             val data = cacheOriginal.data(0, 5, "map_index")
@@ -190,7 +165,33 @@ object RoatzPacker {
         }
 
         if (PACK_OLD_FORMAT) RoatzOldFormatPacker.pack(CACHE_TO_PATH, cacheTo)
-        if (PACK_214_DATA) Roatz214DataPacker.pack(cacheFrom, cacheTo)
+
+        if (PACK_TEXTURES) {
+            val toIndexId = 7
+            val indexTo = if (cacheTo.exists(toIndexId)) cacheTo.index(toIndexId).apply { clear() }
+            else cacheTo.createIndex()
+
+            val indexFrom = cacheFrom.index(8)
+            indexFrom.cache()
+
+            for (archive in indexFrom.archives()) {
+                if (!archive.containsData()) {
+                    println("archive ${archive.id} doesn't contain data! (has ${archive.files().size} files)")
+                    continue
+                }
+
+                for (file in archive.files()) {
+                    val data = file.data!!
+
+                    println("put ${archive.id}:${file.id} with ${data.size} bytes")
+                    cacheTo.put(toIndexId, archive.id, file.id, data)
+                }
+            }
+
+            indexTo.update()
+        }
+
+        if (PACK_OSRS_DATA) RoatzOsrsDataPacker.pack(cacheFrom, cacheTo)
 
         cacheTo.update()
         cacheTo.close()

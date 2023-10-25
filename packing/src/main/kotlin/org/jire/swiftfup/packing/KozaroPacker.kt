@@ -13,7 +13,7 @@ object KozaroPacker {
     private const val CACHE_FROM_PATH = "../server/cache217/"
     internal const val CACHE_TO_PATH = "../server/cache/"
 
-    private const val REBUILD = true
+    private const val REBUILD = false
     private const val REBUILD_DIRECTORY_NAME = "rebuild"
     private const val REBUILD_DIRECTORY_PATH = "${CACHE_TO_PATH}$REBUILD_DIRECTORY_NAME"
 

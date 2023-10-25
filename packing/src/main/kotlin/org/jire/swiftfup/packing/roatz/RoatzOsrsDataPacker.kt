@@ -7,7 +7,7 @@ import org.jire.swiftfup.packing.DefaultXteaRepository
 import java.io.File
 import java.nio.file.Path
 
-internal object Roatz214DataPacker {
+internal object RoatzOsrsDataPacker {
 
     private const val MODELS = true
     private const val ITEMS = true
