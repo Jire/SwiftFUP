@@ -36,7 +36,7 @@ object TarnishPacker {
             return
         }
 
-        val cacheFrom = CacheLibrary.create("../server/cache214/")
+        val cacheFrom = CacheLibrary.create("../server/cache217/")
         val cacheTo = CacheLibrary.create(cachePath)
 
         if (REBUILD) {
@@ -534,7 +534,7 @@ object TarnishPacker {
     }
 
     private fun maps(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
-        DefaultXteaRepository.load(Path.of("..", "server", "cache214", "xteas.json"))
+        DefaultXteaRepository.load(Path.of("..", "server", "cache217", "xteas.json"))
 
         val idx = Unpooled.buffer()
         idx.writeShort(0)

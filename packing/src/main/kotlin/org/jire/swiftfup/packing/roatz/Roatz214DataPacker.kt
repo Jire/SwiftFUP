@@ -282,7 +282,7 @@ internal object Roatz214DataPacker {
             println("for custom region $region ($x,$y) map=$mapFileId and land=$landFileId")
         }
 
-        DefaultXteaRepository.load(Path.of("..", "server", "cache214", "xteas.json"))
+        DefaultXteaRepository.load(Path.of("..", "server", "cache217", "xteas.json"))
         for ((region, xtea) in DefaultXteaRepository.map.toSortedMap()) {
             if (RoatzPacker.customRegionIds.contains(region)) continue
 
