@@ -16,9 +16,9 @@ dependencies {
 
     implementation(libs.netty)
 
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation(libs.gson)
 
-    implementation("net.runelite:cache:1.9.8")
+    implementation(libs.runelite.cache)
 }
 
 val defaultJvmArgs = arrayOf(
