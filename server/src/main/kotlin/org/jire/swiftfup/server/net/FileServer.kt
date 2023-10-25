@@ -1,6 +1,7 @@
 package org.jire.swiftfup.server.net
 
 import io.netty.bootstrap.ServerBootstrap
+import io.netty.buffer.ByteBufAllocator
 import io.netty.channel.ChannelOption
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.ServerChannel
@@ -32,6 +33,9 @@ class FileServer(
     private fun createBootstrap(): ServerBootstrap = ServerBootstrap().apply {
         group(parentGroup, childGroup)
         channel(channelClass)
+
+        option(ChannelOption.ALLOCATOR, ByteBufAllocator.DEFAULT)
+        childOption(ChannelOption.ALLOCATOR, ByteBufAllocator.DEFAULT)
 
         childOption(ChannelOption.SO_KEEPALIVE, true)
         childOption(ChannelOption.TCP_NODELAY, true)
