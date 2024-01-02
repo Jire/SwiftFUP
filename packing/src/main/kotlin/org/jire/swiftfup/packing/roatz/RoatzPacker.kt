@@ -164,8 +164,6 @@ object RoatzPacker {
             }
         }
 
-        if (PACK_OLD_FORMAT) RoatzOldFormatPacker.pack(CACHE_TO_PATH, cacheTo)
-
         if (PACK_TEXTURES) {
             val toIndexId = 7
             val indexTo = if (cacheTo.exists(toIndexId)) cacheTo.index(toIndexId).apply { clear() }
@@ -192,6 +190,8 @@ object RoatzPacker {
         }
 
         if (PACK_OSRS_DATA) RoatzOsrsDataPacker.pack(cacheFrom, cacheTo)
+
+        if (PACK_OLD_FORMAT) RoatzOldFormatPacker.pack(CACHE_TO_PATH, cacheTo)
 
         cacheTo.update()
         cacheTo.close()
