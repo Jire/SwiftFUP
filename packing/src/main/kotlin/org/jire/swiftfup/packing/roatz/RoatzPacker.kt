@@ -7,7 +7,7 @@ import java.io.File
 
 object RoatzPacker {
 
-    private const val CACHE_FROM_PATH = "../server/cache217/"
+    private const val CACHE_FROM_PATH = "data/osrs/cache218/"
     internal const val CACHE_TO_PATH = "../server/cache/"
 
     private const val PACK_OLD_FORMAT = true
@@ -22,7 +22,7 @@ object RoatzPacker {
     private const val SCAN_FOR_LARGE_FILES_MIN_BYTES = 8192
 
     private const val DUMP_CUSTOM_MAPS = true
-    const val DUMP_CUSTOM_MAPS_PATH = "roatz_custom_maps/"
+    const val DUMP_CUSTOM_MAPS_PATH = "data/roatz/custom_maps/"
 
     val customRegionIds = intArrayOf(
         //551,
@@ -138,7 +138,7 @@ object RoatzPacker {
         }
 
         if (DUMP_CUSTOM_MAPS) {
-            val cacheOriginal = CacheLibrary.create("../server/cache-roatz-original/")
+            val cacheOriginal = CacheLibrary.create("data/roatz/cache/")
             val data = cacheOriginal.data(0, 5, "map_index")
             val buf = Unpooled.wrappedBuffer(data)
             val count = buf.readUnsignedShort()

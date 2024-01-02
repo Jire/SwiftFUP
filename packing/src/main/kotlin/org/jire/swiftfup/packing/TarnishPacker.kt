@@ -4,7 +4,6 @@ import com.displee.cache.CacheLibrary
 import com.displee.cache.index.Index317
 import io.netty.buffer.Unpooled
 import java.io.File
-import java.nio.file.Path
 
 object TarnishPacker {
 
@@ -36,7 +35,7 @@ object TarnishPacker {
             return
         }
 
-        val cacheFrom = CacheLibrary.create("../server/cache217/")
+        val cacheFrom = CacheLibrary.create("data/osrs/cache218/")
         val cacheTo = CacheLibrary.create(cachePath)
 
         if (REBUILD) {
@@ -534,7 +533,7 @@ object TarnishPacker {
     }
 
     private fun maps(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
-        DefaultXteaRepository.load(Path.of("..", "server", "cache217", "xteas.json"))
+        DefaultXteaRepository.load()
 
         val idx = Unpooled.buffer()
         idx.writeShort(0)

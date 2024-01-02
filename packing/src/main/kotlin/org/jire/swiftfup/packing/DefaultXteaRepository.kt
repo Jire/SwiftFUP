@@ -13,7 +13,7 @@ object DefaultXteaRepository : XteaRepository {
     @JvmStatic
     @JvmOverloads
     fun load(
-        path: Path = Path.of("xteas.json"),
+        path: Path = Path.of("data", "osrs", "cache218", "xteas.json"),
         gson: Gson = Gson()
     ) {
         path.bufferedReader().use { reader ->

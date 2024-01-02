@@ -10,7 +10,7 @@ import java.io.File
 
 object KozaroPacker {
 
-    private const val CACHE_FROM_PATH = "../server/cache217/"
+    private const val CACHE_FROM_PATH = "data/osrs/cache218/"
     internal const val CACHE_TO_PATH = "../server/cache/"
 
     private const val REBUILD = false
