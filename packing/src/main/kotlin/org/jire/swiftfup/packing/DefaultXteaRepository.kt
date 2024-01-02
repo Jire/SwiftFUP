@@ -15,7 +15,7 @@ object DefaultXteaRepository : XteaRepository {
     fun load(
         path: Path = Path.of("data", "osrs", "cache218", "xteas.json"),
         gson: Gson = Gson()
-    ) {
+    ): Int2ObjectMap<Xtea> {
         path.bufferedReader().use { reader ->
             val xteas = gson.fromJson(reader, Array<Xtea?>::class.java)
             for (xtea in xteas) {
@@ -23,6 +23,7 @@ object DefaultXteaRepository : XteaRepository {
                 set(xtea.mapsquare, xtea)
             }
         }
+        return map
     }
 
     override operator fun get(region: Int): Xtea? = map.get(region)

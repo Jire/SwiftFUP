@@ -281,21 +281,22 @@ internal object RoatzOsrsDataPacker {
             println("for custom region $region ($x,$y) map=$mapFileId and land=$landFileId")
         }
 
-        DefaultXteaRepository.load()
-        for ((region, xtea) in DefaultXteaRepository.map.toSortedMap()) {
+        val xteas = DefaultXteaRepository.load()
+        val defaultXtea = intArrayOf(0, 0, 0, 0)
+        for (region in 0..65535) {
             if (RoatzPacker.customRegionIds.contains(region)) continue
-
-            val mapFileId = fileId++
-            val landFileId = fileId++
 
             val x = (region ushr 8) and 0xFF
             val y = region and 0xFF
 
             val mapName = "m${x}_$y"
-            val landName = "l${x}_$y"
+            val mapData = cacheFrom.data(5, mapName, 0) ?: continue
 
-            val mapData = cacheFrom.data(5, mapName, 0)!!
-            val landData = cacheFrom.data(5, landName, 0, xtea.key)!!
+            val landName = "l${x}_$y"
+            val landData = cacheFrom.data(5, landName, 0, xteas.get(region)?.key ?: defaultXtea) ?: continue
+
+            val mapFileId = fileId++
+            val landFileId = fileId++
 
             cacheTo.remove(4, mapFileId)
             cacheTo.put(4, mapFileId, mapData)
