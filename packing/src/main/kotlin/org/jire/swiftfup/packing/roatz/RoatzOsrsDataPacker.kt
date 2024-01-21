@@ -2,6 +2,10 @@ package org.jire.swiftfup.packing.roatz
 
 import com.displee.cache.CacheLibrary
 import io.netty.buffer.Unpooled
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
+import it.unimi.dsi.fastutil.objects.ObjectArrayList
+import it.unimi.dsi.fastutil.objects.ObjectList
 import org.jire.swiftfup.common.GzipCompression
 import org.jire.swiftfup.packing.DefaultXteaRepository
 import java.io.File
@@ -19,6 +23,8 @@ internal object RoatzOsrsDataPacker {
     private const val FRAMES = true
     private const val ANIMATIONS = true
     private const val TEXTURES = true
+
+    private const val CUSTOM_KORASI = true
 
     fun pack(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
         if (MODELS) models(cacheFrom, cacheTo)
@@ -183,6 +189,24 @@ internal object RoatzOsrsDataPacker {
                     biggestSize = dataSize
             }
         }
+
+        if (CUSTOM_KORASI) {
+            for (file in File("data/roatz/korasi/graphics/").listFiles()) {
+                if (file.extension != "dat") continue
+                val fileId = file.nameWithoutExtension.toInt()
+                val data = file.readBytes()
+                val dataSize = data.size
+                if (dataSize >= 65535) throw IllegalStateException("TOO LARGE GRAPHIC! ${fromArchive.id}:$fileId size was $dataSize")
+                buf.writeShort(fileId)
+                buf.writeShort(dataSize)
+                buf.writeBytes(data)
+                if (fileId > highestFileId)
+                    highestFileId = fileId
+                if (dataSize > biggestSize)
+                    biggestSize = dataSize
+            }
+        }
+
         buf.writeShort(-1)
 
         buf.setShort(0, highestFileId)
@@ -347,6 +371,18 @@ internal object RoatzOsrsDataPacker {
             buf.writeBytes(data)
             count++
         }
+        if (CUSTOM_KORASI) {
+            for (file in File("data/roatz/korasi/animations/bases/").listFiles()) {
+                if (file.extension != "dat") continue
+                val fileName = file.nameWithoutExtension
+                val groupId = fileName.toInt()
+                val data = file.readBytes()
+                buf.writeShort(groupId)
+                buf.writeShort(data.size)
+                buf.writeBytes(data)
+                count++
+            }
+        }
 
         buf.setShort(0, count)
 
@@ -399,6 +435,46 @@ internal object RoatzOsrsDataPacker {
             count++
         }
 
+        if (CUSTOM_KORASI) {
+            val baseToFrames: Int2ObjectMap<ObjectList<File>> = Int2ObjectOpenHashMap()
+            for (file in File("data/roatz/korasi/animations/frames/").listFiles()) {
+                if (file.extension != "dat") continue
+                val frameId = file.nameWithoutExtension.toInt()
+                val baseId = frameId ushr 16
+                var list = baseToFrames.get(baseId)
+                if (list == null) {
+                    list = ObjectArrayList()
+                    baseToFrames.put(baseId, list)
+                }
+                list.add(file)
+            }
+            for ((baseId, files) in baseToFrames.int2ObjectEntrySet()) {
+                val buf = Unpooled.buffer()
+                var highestFileId = 0
+                buf.writeShort(highestFileId) // placeholder
+
+                for (file in files) {
+                    val fileId = file.nameWithoutExtension.toInt() and 0xFFFF
+                    val data = file.readBytes()
+                    buf.writeShort(fileId)
+                    buf.writeMedium(data.size)
+                    buf.writeBytes(data)
+                    if (fileId > highestFileId)
+                        highestFileId = fileId
+                }
+
+                buf.setShort(0, highestFileId)
+
+                buf.readerIndex(0)
+                val array = ByteArray(buf.readableBytes())
+                buf.readBytes(array)
+
+                cacheTo.put(2, baseId, array)
+
+                count++
+            }
+        }
+
         indexTo.update()
 
         println("frames count $count")
@@ -432,6 +508,23 @@ internal object RoatzOsrsDataPacker {
                     biggestSize = data.size
 
                 //println("seq $fileId length ${data.size}")
+            }
+        }
+
+        if (CUSTOM_KORASI) {
+            for (file in File("data/roatz/korasi/animations/definitions/").listFiles()) {
+                if (file.extension != "dat") continue
+                val fileId = file.nameWithoutExtension.toInt()
+                val data = file.readBytes()
+                val dataSize = data.size
+                buf.writeShort(fileId)
+                if (dataSize >= 65535) throw IllegalStateException("TOO LARGE DATA! ${fromArchive.id}:$fileId size $dataSize")
+                buf.writeShort(dataSize)
+                buf.writeBytes(data)
+                if (fileId > highestFileId)
+                    highestFileId = fileId
+                if (data.size > biggestSize)
+                    biggestSize = data.size
             }
         }
 
