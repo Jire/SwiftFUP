@@ -5,6 +5,7 @@ import io.netty.buffer.Unpooled
 import org.jire.swiftfup.common.GzipCompression
 import org.jire.swiftfup.packing.DefaultXteaRepository
 import java.io.File
+import java.nio.file.Path
 
 internal object RoatzOsrsDataPacker {
 
@@ -281,7 +282,7 @@ internal object RoatzOsrsDataPacker {
             println("for custom region $region ($x,$y) map=$mapFileId and land=$landFileId")
         }
 
-        val xteas = DefaultXteaRepository.load()
+        val xteas = DefaultXteaRepository.load(path = Path.of("data", "osrs", "cache216", "xteas.json"))
         val defaultXtea = intArrayOf(0, 0, 0, 0)
         for (region in 0..65535) {
             if (RoatzPacker.customRegionIds.contains(region)) continue
