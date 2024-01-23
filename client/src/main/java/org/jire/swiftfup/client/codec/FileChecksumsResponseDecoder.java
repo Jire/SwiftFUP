@@ -19,7 +19,6 @@ public final class FileChecksumsResponseDecoder extends ByteToMessageDecoder {
 
     private int size = -1;
 
-    @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
         if (size == -1) {
             if (!in.isReadable(4)) {

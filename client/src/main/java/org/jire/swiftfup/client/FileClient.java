@@ -1,52 +1,51 @@
 package org.jire.swiftfup.client;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
-import io.netty.channel.epoll.Epoll;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.epoll.EpollSocketChannel;
-import io.netty.channel.kqueue.KQueue;
-import io.netty.channel.kqueue.KQueueEventLoopGroup;
-import io.netty.channel.kqueue.KQueueSocketChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+
+import java.net.SocketAddress;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Jire
  */
 public final class FileClient {
 
+    public static final long DEFAULT_TIMEOUT_NANOS = 5L * 1000 * 1000 * 1000;
+
     private final FileRequests fileRequests;
     private final Bootstrap bootstrap;
+    private final SocketAddress[] remoteAddresses;
 
     private volatile Channel channel;
 
-    public FileClient(String host, int port,
-                      FileRequests fileRequests) {
+    public FileClient(FileRequests fileRequests,
+                      EventLoopGroup eventLoopGroup,
+                      Class<? extends Channel> channelClass,
+                      SocketAddress... remoteAddresses) {
+        if (remoteAddresses == null || remoteAddresses.length == 0) {
+            throw new IllegalArgumentException("Need to pass at least one address");
+        }
+
         this.fileRequests = fileRequests;
 
-        int netThreads = 1;
-        final EventLoopGroup group
-                = Epoll.isAvailable() ? new EpollEventLoopGroup(netThreads)
-                : KQueue.isAvailable() ? new KQueueEventLoopGroup(netThreads)
-                : new NioEventLoopGroup(netThreads);
-        final Class<? extends Channel> channelClass
-                = group instanceof EpollEventLoopGroup ? EpollSocketChannel.class
-                : group instanceof KQueueEventLoopGroup ? KQueueSocketChannel.class
-                : NioSocketChannel.class;
         bootstrap = new Bootstrap()
                 .channel(channelClass)
-                .group(group)
+                .group(eventLoopGroup)
                 .option(ChannelOption.SO_KEEPALIVE, true)
                 .option(ChannelOption.TCP_NODELAY, true)
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120_000)
-                .remoteAddress(host, port);
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120_000);
         try {
             // unsupported on older Windows versions (2003 and XP)
             bootstrap.option(ChannelOption.IP_TOS, 0b100_000_10);
         } catch (final Exception e) {
             e.printStackTrace();
         }
+
+        this.remoteAddresses = remoteAddresses;
     }
 
     public FileRequests getFileRequests() {
@@ -65,18 +64,49 @@ public final class FileClient {
         return channel != null && channel.isOpen();
     }
 
-    public ChannelFuture createChannelFuture(final boolean reconnect) {
-        final ChannelHandler handler =
-                new FileClientChannelInitializer(getFileRequests(), reconnect);
+    public ChannelFuture createChannelFuture(final boolean reconnect,
+                                             final Runnable whileWaiting,
+                                             final long timeoutNanos) {
+        final Bootstrap bootstrap = this.bootstrap
+                .handler(new FileClientChannelInitializer(getFileRequests(), reconnect));
 
-        final Bootstrap bootstrap = this.bootstrap;
-        return bootstrap
-                .handler(handler)
-                .connect();
+        final ChannelFuture[] futures = new ChannelFuture[remoteAddresses.length];
+        for (int i = 0; i < futures.length; i++) {
+            futures[i] = bootstrap.connect(remoteAddresses[i]);
+        }
+
+        long start = System.nanoTime();
+        while (!Thread.interrupted() && System.nanoTime() - start < timeoutNanos) {
+            for (ChannelFuture future : futures) {
+                if (future.isSuccess()) {
+                    for (ChannelFuture otherFuture : futures) {
+                        if (otherFuture != future) {
+                            otherFuture.cancel(true);
+                        }
+                    }
+                    return future;
+                }
+            }
+
+            if (whileWaiting != null) {
+                whileWaiting.run();
+            }
+
+            Thread.yield();
+        }
+
+        if (Thread.interrupted()) {
+            throw new FileClientConnectInterruptedException(
+                    "Thread was interrupted during " + (reconnect ? "re" : "") + "connect");
+        }
+
+        System.err.println("timed out after " + TimeUnit.NANOSECONDS.toSeconds(timeoutNanos) + " seconds");
+        return createChannelFuture(reconnect, whileWaiting, timeoutNanos + DEFAULT_TIMEOUT_NANOS);
     }
 
-    public Channel connect(final boolean reconnect) {
-        final Channel channel = createChannelFuture(reconnect)
+    public Channel connect(final boolean reconnect,
+                           final Runnable whileWaiting) {
+        final Channel channel = createChannelFuture(reconnect, whileWaiting, DEFAULT_TIMEOUT_NANOS)
                 .syncUninterruptibly()
                 .channel();
 
@@ -84,13 +114,13 @@ public final class FileClient {
         return channel;
     }
 
-    public Channel connect() {
-        return connect(false);
+    public Channel connect(final Runnable whileWaiting) {
+        return connect(false, whileWaiting);
     }
 
     public Channel connectedChannel() {
         Channel channel = getChannel();
-        return isConnected(channel) ? channel : connect(true);
+        return isConnected(channel) ? channel : connect(true, null);
     }
 
     public void flush() {
