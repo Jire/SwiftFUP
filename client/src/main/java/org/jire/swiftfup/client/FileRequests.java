@@ -66,8 +66,14 @@ public final class FileRequests {
             requests.put(filePair, request);
 
             pendingRequests.offer(request);
-        } else if (!request.isDone()) {
-            pendingRequests.offer(request);
+        } else if (FilePair.index(filePair) > 0) {
+            FileResponse response = request.getNow(null);
+            if (response != null) {
+                byte[] decompressedData = response.getDecompressedData();
+                if (decompressedData != null) {
+                    fileDecompressedListener.decompressed(response);
+                }
+            }
         }
 
         return request;
@@ -75,7 +81,6 @@ public final class FileRequests {
 
     public void process(FileClient fileClient) {
         processCompletedResponses();
-        processDecompressedResponses();
 
         // last because we still want to process any completed requests from earlier
         // before potentially waiting for channel to reconnect
@@ -111,15 +116,11 @@ public final class FileRequests {
                 if (checksumMatches(filePair, diskData)) {
                     FileResponse response = new FileResponse(filePair, diskData);
 
-                    /* we must decompress here to have stuff like anims loading within same client frame */
-                    response.setDecompressedData(fileStore);
-                    fileDecompressedListener.decompressed(response);
+                    notifyDecompressed(response);
 
                     request.complete(response);
                     continue;
                 }
-
-                request.thenAcceptAsync(this::notifyDecompressed);
             }
 
             request.thenAcceptAsync(response -> {
@@ -149,10 +150,14 @@ public final class FileRequests {
             int filePair = response.getFilePair();
             FileRequest request = requests.get(filePair);
             request.complete(response);
+
+            if (FilePair.index(filePair) > 0) {
+                notifyDecompressed(response);
+            }
         }
     }
 
-    private void processDecompressedResponses() {
+    public void processDecompressedResponses() {
         final MessagePassingQueue<FileResponse> decompressedResponses = this.decompressedResponses;
         final FileDecompressedListener fileDecompressedListener = this.fileDecompressedListener;
         while (!decompressedResponses.isEmpty()) {
@@ -172,8 +177,9 @@ public final class FileRequests {
     }
 
     public void notifyDecompressed(FileResponse response) {
-        response.setDecompressedData(fileStore);
-        decompressedResponses.offer(response);
+        if (response.setDecompressedData(fileStore) != null) {
+            decompressedResponses.offer(response);
+        }
     }
 
     public boolean checksumMatches(int filePair, int checksum) {
