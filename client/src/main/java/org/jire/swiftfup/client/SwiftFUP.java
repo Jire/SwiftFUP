@@ -31,7 +31,9 @@ public interface SwiftFUP {
     default void startAutoProcessor() {
         AutoProcessor autoProcessor = getAutoProcessor();
         if (autoProcessor != null)
-            new Thread(() -> autoProcessor.autoProcessLoop(getFileRequests())).start();
+            new Thread(() ->
+                    autoProcessor.autoProcessLoop(getFileClient(), getFileRequests()),
+                    "SwiftFUP-AutoProcessor").start();
     }
 
     default FileRequests initializeFileRequests() {
@@ -49,7 +51,7 @@ public interface SwiftFUP {
                                             Runnable whileWaiting,
                                             SocketAddress... remoteAddresses) {
         FileClient fileClient = fileClientGroup.createClient(fileRequests, remoteAddresses);
-        fileClient.connect(whileWaiting);
+        fileClient.connect(false, whileWaiting);
         setFileClient(fileClient);
         return fileClient;
     }
@@ -79,7 +81,6 @@ public interface SwiftFUP {
     default FileChecksumsResponse initializeChecksums(FileClient fileClient,
                                                       int timeout, TimeUnit timeoutTimeUnit) {
         FileChecksumsRequest fileChecksumsRequest = fileClient.requestChecksums();
-        fileClient.flush();
         try {
             return fileChecksumsRequest.get(timeout, timeoutTimeUnit);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {

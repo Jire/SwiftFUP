@@ -7,7 +7,6 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 
 import java.net.SocketAddress;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Jire
@@ -56,14 +55,6 @@ public final class FileClient {
         return channel;
     }
 
-    public void setChannel(Channel channel) {
-        this.channel = channel;
-    }
-
-    public boolean isConnected(Channel channel) {
-        return channel != null && channel.isOpen();
-    }
-
     public ChannelFuture createChannelFuture(final boolean reconnect,
                                              final Runnable whileWaiting,
                                              final long timeoutNanos) {
@@ -100,7 +91,6 @@ public final class FileClient {
                     "Thread was interrupted during " + (reconnect ? "re" : "") + "connect");
         }
 
-        System.err.println("timed out after " + TimeUnit.NANOSECONDS.toSeconds(timeoutNanos) + " seconds");
         return createChannelFuture(reconnect, whileWaiting, timeoutNanos + DEFAULT_TIMEOUT_NANOS);
     }
 
@@ -109,34 +99,12 @@ public final class FileClient {
         final Channel channel = createChannelFuture(reconnect, whileWaiting, DEFAULT_TIMEOUT_NANOS)
                 .syncUninterruptibly()
                 .channel();
-
-        setChannel(channel);
+        this.channel = channel;
         return channel;
     }
 
-    public Channel connect(final Runnable whileWaiting) {
-        return connect(false, whileWaiting);
-    }
-
-    public Channel connectedChannel() {
-        Channel channel = getChannel();
-        return isConnected(channel) ? channel : connect(true, null);
-    }
-
-    public void flush() {
-        Channel channel = getChannel();
-        if (isConnected(channel))
-            channel.flush();
-    }
-
-    public void request(FileRequest fileRequest) {
-        Channel channel = connectedChannel();
-        channel.write(fileRequest, channel.voidPromise());
-        fileRequest.sent();
-    }
-
     public FileRequest request(int filePair) {
-        return getFileRequests().filePair(filePair, this);
+        return fileRequests.filePair(filePair);
     }
 
     public FileRequest request(int index, int file) {
@@ -144,8 +112,8 @@ public final class FileClient {
     }
 
     public void request(FileChecksumsRequest checksumsRequest) {
-        Channel channel = connectedChannel();
-        channel.write(checksumsRequest, channel.voidPromise());
+        Channel channel = getChannel();
+        channel.writeAndFlush(checksumsRequest, channel.voidPromise());
     }
 
     public FileChecksumsRequest requestChecksums() {

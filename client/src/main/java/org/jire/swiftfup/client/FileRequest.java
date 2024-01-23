@@ -7,8 +7,6 @@ import java.util.concurrent.CompletableFuture;
  */
 public final class FileRequest extends CompletableFuture<FileResponse> {
 
-    private volatile boolean sent;
-
     private final int filePair;
 
     public FileRequest(int filePair) {
@@ -17,14 +15,6 @@ public final class FileRequest extends CompletableFuture<FileResponse> {
 
     public int getFilePair() {
         return filePair;
-    }
-
-    public boolean isSent() {
-        return sent;
-    }
-
-    public void sent() {
-        this.sent = true;
     }
 
 }
