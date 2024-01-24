@@ -32,7 +32,7 @@ public interface AutoProcessor {
     }
 
     default int sleepTime() {
-        return 20;
+        return 100;
     }
 
 }
