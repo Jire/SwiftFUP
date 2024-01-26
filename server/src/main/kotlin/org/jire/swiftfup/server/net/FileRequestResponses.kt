@@ -38,13 +38,9 @@ class FileRequestResponses {
             checksumsBuffer
                 .writeMedium(archives.size)
 
-            var i = 0
             var responsesBuilt = 0
             for (archive in archives) {
                 val archiveId = archive.id
-                val ii = i++
-                if (archiveId != ii)
-                    throw IllegalStateException("failed index $indexId archive $archiveId because ii was $ii")
 
                 val sector = index.readArchiveSector(archiveId)
                 val data = sector?.data
