@@ -14,6 +14,7 @@ import java.net.SocketAddress;
 public final class FileClient {
 
     public static final long DEFAULT_TIMEOUT_NANOS = 5L * 1000 * 1000 * 1000;
+    public static final long MAX_TIMEOUT_NANOS = 30L * 1000 * 1000 * 1000;
 
     private final FileRequests fileRequests;
     private final Bootstrap bootstrap;
@@ -91,7 +92,8 @@ public final class FileClient {
                     "Thread was interrupted during " + (reconnect ? "re" : "") + "connect");
         }
 
-        return createChannelFuture(reconnect, whileWaiting, timeoutNanos + DEFAULT_TIMEOUT_NANOS);
+        return createChannelFuture(reconnect, whileWaiting,
+                Math.min(timeoutNanos + DEFAULT_TIMEOUT_NANOS, MAX_TIMEOUT_NANOS));
     }
 
     public Channel connect(final boolean reconnect,
