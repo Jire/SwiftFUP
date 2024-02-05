@@ -46,7 +46,7 @@ class FileServer(
 
         childOption(
             ChannelOption.WRITE_BUFFER_WATER_MARK,
-            WriteBufferWaterMark(2 shl 18, 2 shl 20)
+            WriteBufferWaterMark(2 shl 20, 2 shl 24)
         )
 
         try {
