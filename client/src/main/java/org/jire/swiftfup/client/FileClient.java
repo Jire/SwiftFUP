@@ -56,9 +56,9 @@ public final class FileClient {
         return channel;
     }
 
-    public ChannelFuture createChannelFuture(final boolean reconnect,
-                                             final Runnable whileWaiting,
-                                             final long timeoutNanos) {
+    public Channel createChannelFuture(final boolean reconnect,
+                                       final Runnable whileWaiting,
+                                       final long timeoutNanos) {
         final Bootstrap bootstrap = this.bootstrap
                 .handler(new FileClientChannelInitializer(getFileRequests(), reconnect));
 
@@ -67,16 +67,36 @@ public final class FileClient {
             futures[i] = bootstrap.connect(remoteAddresses[i]);
         }
 
+        if (whileWaiting != null) {
+            whileWaiting.run();
+        }
+
         long start = System.nanoTime();
+        while (!Thread.interrupted() && System.nanoTime() - start < (timeoutNanos / 2)) {
+            if (whileWaiting != null) {
+                whileWaiting.run();
+            }
+
+            try {
+                Thread.sleep(20);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        start = System.nanoTime();
         while (!Thread.interrupted() && System.nanoTime() - start < timeoutNanos) {
             for (ChannelFuture future : futures) {
                 if (future.isSuccess()) {
-                    for (ChannelFuture otherFuture : futures) {
-                        if (otherFuture != future) {
-                            otherFuture.cancel(true);
+                    Channel channel = future.syncUninterruptibly().channel();
+                    if (channel.isActive()) {
+                        for (ChannelFuture otherFuture : futures) {
+                            if (otherFuture != future) {
+                                otherFuture.cancel(true);
+                            }
                         }
+                        return channel;
                     }
-                    return future;
                 }
             }
 
@@ -98,9 +118,7 @@ public final class FileClient {
 
     public Channel connect(final boolean reconnect,
                            final Runnable whileWaiting) {
-        final Channel channel = createChannelFuture(reconnect, whileWaiting, DEFAULT_TIMEOUT_NANOS)
-                .syncUninterruptibly()
-                .channel();
+        final Channel channel = createChannelFuture(reconnect, whileWaiting, DEFAULT_TIMEOUT_NANOS);
         this.channel = channel;
         return channel;
     }
