@@ -30,14 +30,16 @@ public final class FileResponseDecoder extends ByteToMessageDecoder {
             return;
         }
 
-        final byte[] data = dataSize > 0 ? new byte[dataSize] : null;
-        if (data != null) in.readBytes(data);
+        try {
+            final byte[] data = dataSize > 0 ? new byte[dataSize] : null;
+            if (data != null) in.readBytes(data);
 
-        final FileResponse fileResponse = new FileResponse(filePair, data);
-        out.add(fileResponse);
-
-        filePair = -1;
-        dataSize = -1;
+            final FileResponse fileResponse = new FileResponse(filePair, data);
+            out.add(fileResponse);
+        } finally {
+            dataSize = -1;
+            filePair = -1;
+        }
     }
 
 }

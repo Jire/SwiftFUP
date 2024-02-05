@@ -5,11 +5,15 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.jire.swiftfup.client.FileChecksumsResponse;
 import org.jire.swiftfup.client.FileRequests;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Jire
  */
 public final class FileChecksumsResponseHandler extends SimpleChannelInboundHandler<FileChecksumsResponse> {
+
+    private static final Logger logger = LoggerFactory.getLogger(FileChecksumsResponseHandler.class);
 
     private final FileRequests fileRequests;
 
@@ -25,6 +29,11 @@ public final class FileChecksumsResponseHandler extends SimpleChannelInboundHand
         p.replace(this, "handler", new FileResponseHandler(fileRequests));
 
         fileRequests.notifyChecksums(msg);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        logger.error("Exception caught", cause);
     }
 
 }

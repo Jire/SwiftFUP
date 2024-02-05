@@ -9,6 +9,7 @@ import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import org.jire.swiftfup.client.FileChecksumsResponse;
 import org.jire.swiftfup.client.FilePair;
 import org.jire.swiftfup.client.GZIPDecompressor;
+import org.jire.swiftfup.client.SwiftFUP;
 
 import java.util.List;
 
@@ -36,26 +37,29 @@ public final class FileChecksumsResponseDecoder extends ByteToMessageDecoder {
         in.readBytes(compressedBytes);
 
         final byte[] decompressedBytes = GZIPDecompressor.getInstance().decompress(compressedBytes);
+
+        final Int2IntMap fileToChecksum = new Int2IntOpenHashMap(SwiftFUP.DEFAULT_EXPECTED_REQUESTS);
+
         final ByteBuf data = Unpooled.wrappedBuffer(decompressedBytes);
 
-        final Int2IntMap fileToChecksum = new Int2IntOpenHashMap();
+        try {
+            final int indexCount = data.readUnsignedByte();
+            for (int indexId = 0; indexId < indexCount; indexId++) {
 
-        final int indexCount = data.readUnsignedByte();
-        for (int indexId = 0; indexId < indexCount; indexId++) {
+                final int archiveCount = data.readUnsignedMedium();
+                for (int archiveId = 0; archiveId < archiveCount; archiveId++) {
 
-            final int archiveCount = data.readUnsignedMedium();
-            for (int archiveId = 0; archiveId < archiveCount; archiveId++) {
+                    final int crc32 = data.readInt();
+                    if (crc32 == 0) continue;
 
-                final int crc32 = data.readInt();
-                if (crc32 == 0) continue;
+                    final int filePair = FilePair.create(indexId, archiveId);
 
-                final int filePair = FilePair.create(indexId, archiveId);
-
-                fileToChecksum.put(filePair, crc32);
+                    fileToChecksum.put(filePair, crc32);
+                }
             }
+        } finally {
+            data.release();
         }
-
-        data.release();
 
         final FileChecksumsResponse response = new FileChecksumsResponse(fileToChecksum);
         out.add(response);
