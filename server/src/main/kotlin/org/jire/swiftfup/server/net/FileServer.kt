@@ -20,7 +20,8 @@ import kotlin.math.max
  * @author Jire
  */
 class FileServer(
-    private val fileRequestResponses: FileRequestResponses,
+    private val version: Int,
+    private val fileResponses: FileResponses,
 
     private val parentGroup: EventLoopGroup =
         eventLoopGroup(1),
@@ -55,7 +56,7 @@ class FileServer(
             e.printStackTrace()
         }
 
-        childHandler(FileServerChannelInitializer(fileRequestResponses))
+        childHandler(FileServerChannelInitializer(version, fileResponses))
 
         if (parentGroup is EpollEventLoopGroup) {
             // necessary to support disabling auto-read

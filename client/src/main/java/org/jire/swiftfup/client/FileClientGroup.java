@@ -10,8 +10,6 @@ import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
 
@@ -19,8 +17,6 @@ import java.net.SocketAddress;
  * @author Jire
  */
 public interface FileClientGroup {
-
-    Logger logger = LoggerFactory.getLogger(FileClientGroup.class);
 
     EventLoopGroup getEventLoopGroup();
 

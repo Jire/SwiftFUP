@@ -28,6 +28,8 @@ public final class FileResponseHandler extends SimpleChannelInboundHandler<FileR
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         logger.error("Exception caught", cause);
+        
+        ctx.close();
     }
 
 }

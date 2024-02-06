@@ -8,6 +8,8 @@ import io.netty.channel.EventLoopGroup;
 
 import java.net.SocketAddress;
 
+import static org.jire.swiftfup.client.codec.HandshakeResponseHandler.HANDSHAKE_RESPONSE_ATTRIBUTE_KEY;
+
 /**
  * @author Jire
  */
@@ -48,10 +50,6 @@ public final class FileClient {
         this.remoteAddresses = remoteAddresses;
     }
 
-    public FileRequests getFileRequests() {
-        return fileRequests;
-    }
-
     public Channel getChannel() {
         return channel;
     }
@@ -60,44 +58,40 @@ public final class FileClient {
                                        final Runnable whileWaiting,
                                        final long timeoutNanos) {
         final Bootstrap bootstrap = this.bootstrap
-                .handler(new FileClientChannelInitializer(getFileRequests(), reconnect));
+                .handler(new FileClientChannelInitializer(fileRequests));
 
         final ChannelFuture[] futures = new ChannelFuture[remoteAddresses.length];
         for (int i = 0; i < futures.length; i++) {
             futures[i] = bootstrap.connect(remoteAddresses[i]);
         }
 
-        if (whileWaiting != null) {
-            whileWaiting.run();
-        }
-
-        long start = System.nanoTime();
-        while (!Thread.interrupted() && System.nanoTime() - start < (timeoutNanos / 2)) {
-            if (whileWaiting != null) {
-                whileWaiting.run();
-            }
-
-            try {
-                Thread.sleep(20);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        start = System.nanoTime();
+        final long start = System.nanoTime();
         while (!Thread.interrupted() && System.nanoTime() - start < timeoutNanos) {
-            for (ChannelFuture future : futures) {
-                if (future.isSuccess()) {
-                    Channel channel = future.syncUninterruptibly().channel();
-                    if (channel.isActive()) {
-                        for (ChannelFuture otherFuture : futures) {
-                            if (otherFuture != future) {
-                                otherFuture.cancel(true);
-                            }
+            for (final ChannelFuture future : futures) {
+                if (!future.isSuccess()) continue;
+
+                final Channel channel = future.channel();
+                if (!channel.isActive()) continue;
+
+                final HandshakeResponse handshakeResponse = channel.attr(HANDSHAKE_RESPONSE_ATTRIBUTE_KEY).get();
+                if (handshakeResponse == null) continue;
+
+                for (final ChannelFuture otherFuture : futures) {
+                    if (otherFuture != future) {
+                        otherFuture.cancel(true);
+
+                        if (otherFuture.isSuccess()) {
+                            final Channel otherChannel = otherFuture.channel();
+                            otherChannel.close();
                         }
-                        return channel;
                     }
                 }
+
+                if (reconnect) {
+                    fileRequests.checksums();
+                }
+
+                return channel;
             }
 
             if (whileWaiting != null) {
@@ -108,36 +102,29 @@ public final class FileClient {
         }
 
         if (Thread.interrupted()) {
-            throw new FileClientConnectInterruptedException(
-                    "Thread was interrupted during " + (reconnect ? "re" : "") + "connect");
+            throw new FileClientConnectInterruptedException("Thread was interrupted during connect");
         }
 
         return createChannelFuture(reconnect, whileWaiting,
                 Math.min(timeoutNanos + DEFAULT_TIMEOUT_NANOS, MAX_TIMEOUT_NANOS));
     }
 
-    public Channel connect(final boolean reconnect,
-                           final Runnable whileWaiting) {
+    public Channel connect(final boolean reconnect, final Runnable whileWaiting) {
         final Channel channel = createChannelFuture(reconnect, whileWaiting, DEFAULT_TIMEOUT_NANOS);
         this.channel = channel;
         return channel;
     }
 
-    public FileRequest request(int filePair) {
-        return fileRequests.filePair(filePair);
-    }
+    public Channel getConnectedChannel() {
+        Channel channel = this.channel;
+        if (channel == null) {
+            return null;
+        } else if (channel.isActive()) {
+            return channel;
+        }
 
-    public FileRequest request(int index, int file) {
-        return request(FilePair.create(index, file));
-    }
-
-    public void request(FileChecksumsRequest checksumsRequest) {
-        Channel channel = getChannel();
-        channel.writeAndFlush(checksumsRequest, channel.voidPromise());
-    }
-
-    public FileChecksumsRequest requestChecksums() {
-        return getFileRequests().checksums(this);
+        // await the full reconnect before resuming our thread...
+        return connect(true, null);
     }
 
 }

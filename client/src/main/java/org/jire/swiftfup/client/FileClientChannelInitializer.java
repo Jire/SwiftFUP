@@ -1,43 +1,33 @@
 package org.jire.swiftfup.client;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import org.jire.swiftfup.client.codec.*;
+import org.jire.swiftfup.client.codec.HandshakeRequestEncoder;
+import org.jire.swiftfup.client.codec.HandshakeResponseDecoder;
+import org.jire.swiftfup.client.codec.HandshakeResponseHandler;
 
 /**
  * @author Jire
  */
 public final class FileClientChannelInitializer extends ChannelInitializer<Channel> {
 
-    private final FileRequests fileRequests;
-    private final boolean reconnect;
+    public static final String DECODER_HANDLER = "decoder";
+    public static final String ENCODER_HANDLER = "encoder";
+    public static final String TAIL_HANDLER = "tail";
 
-    public FileClientChannelInitializer(FileRequests fileRequests, boolean reconnect) {
+    private final FileRequests fileRequests;
+
+    public FileClientChannelInitializer(FileRequests fileRequests) {
         this.fileRequests = fileRequests;
-        this.reconnect = reconnect;
     }
 
     @Override
     protected void initChannel(Channel ch) {
-        final ChannelHandler decoder =
-                reconnect
-                        ? new FileResponseDecoder()
-                        : new FileChecksumsResponseDecoder();
-        final ChannelHandler encoder =
-                reconnect
-                        ? new FileRequestEncoder()
-                        : new FileChecksumsRequestEncoder();
-        final ChannelHandler handler =
-                reconnect
-                        ? new FileResponseHandler(fileRequests)
-                        : new FileChecksumsResponseHandler(fileRequests);
-
         final ChannelPipeline p = ch.pipeline();
-        p.addLast("decoder", decoder);
-        p.addLast("encoder", encoder);
-        p.addLast("handler", handler);
+        p.addLast(DECODER_HANDLER, new HandshakeResponseDecoder());
+        p.addLast(ENCODER_HANDLER, new HandshakeRequestEncoder());
+        p.addLast(TAIL_HANDLER, new HandshakeResponseHandler(fileRequests));
     }
 
 }

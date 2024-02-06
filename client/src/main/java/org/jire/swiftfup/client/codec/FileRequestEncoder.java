@@ -12,8 +12,6 @@ public final class FileRequestEncoder extends MessageToByteEncoder<FileRequest> 
 
     @Override
     protected void encode(ChannelHandlerContext ctx, FileRequest msg, ByteBuf out) {
-        out.writeByte(1);
-
         final int filePair = msg.getFilePair();
         out.writeMedium(filePair);
     }

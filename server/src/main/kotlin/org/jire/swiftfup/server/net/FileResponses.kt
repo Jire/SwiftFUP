@@ -13,9 +13,7 @@ import java.util.zip.CRC32
 /**
  * @author Jire
  */
-class FileRequestResponses {
-
-    lateinit var checksumsResponse: ByteBuf
+class FileResponses {
 
     private val bitpack2Response: Int2ObjectMap<ByteBuf> = Int2ObjectOpenHashMap()
 
@@ -86,11 +84,13 @@ class FileRequestResponses {
         val compressedChecksumsBufferArray = GzipCompression.compress(checksumsBufferArray)
         val compressedChecksumsBufferArraySize = compressedChecksumsBufferArray.size
 
-        checksumsResponse = directBuffer(compressedChecksumsBufferArraySize + 4).run {
+        val checksumsResponse = directBuffer(compressedChecksumsBufferArraySize + 4).run {
+            writeFilePair(FilePair.checksumsFilePair)
             writeInt(compressedChecksumsBufferArraySize)
             writeBytes(compressedChecksumsBufferArray)
             asReadOnly()
         }
+        bitpack2Response[FilePair.checksumsFilePair.bitpack] = checksumsResponse
     }
 
 }

@@ -3,25 +3,21 @@ package org.jire.swiftfup.server.net.codec
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import org.jire.swiftfup.server.FilePair
-import org.jire.swiftfup.server.net.FileRequestResponses
+import org.jire.swiftfup.server.net.FileResponses
 import java.io.IOException
 
 /**
  * @author Jire
  */
-class FileServerRequestHandler(
-    private val responses: FileRequestResponses
+class FileRequestHandler(
+    private val responses: FileResponses
 ) : SimpleChannelInboundHandler<FilePair>() {
 
     override fun channelRead0(ctx: ChannelHandlerContext, msg: FilePair) {
-        if (msg.bitpack == FilePair.checksumsFilePair.bitpack) {
-            ctx.write(responses.checksumsResponse.retainedDuplicate(), ctx.voidPromise())
-        } else {
-            val response = responses[msg]
-                ?: throw IllegalStateException("Request was null for $msg")
+        val response = responses[msg]
+            ?: throw IllegalStateException("Request was null for $msg")
 
-            ctx.write(response.retainedDuplicate(), ctx.voidPromise())
-        }
+        ctx.write(response.retainedDuplicate(), ctx.voidPromise())
     }
 
     override fun channelReadComplete(ctx: ChannelHandlerContext) {
@@ -45,6 +41,7 @@ class FileServerRequestHandler(
         if (cause !is IOException) {
             cause.printStackTrace()
         }
+
         ctx.close()
     }
 

@@ -35,7 +35,7 @@ value class FilePair(val bitpack: Int) {
         fun ByteBuf.readFilePair() = FilePair(readUnsignedMedium())
         fun ByteBuf.writeFilePair(filePair: FilePair) = writeMedium(filePair.bitpack)
 
-        val checksumsFilePair = FilePair(Int.MIN_VALUE)
+        val checksumsFilePair = FilePair(0x1F, 0x7FFFF)
 
     }
 

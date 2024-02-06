@@ -1,5 +1,7 @@
 package org.jire.swiftfup.client;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.util.internal.shaded.org.jctools.queues.MessagePassingQueue;
 import io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueue;
@@ -19,7 +21,6 @@ public final class FileRequests {
     private final FileStore fileStore;
 
     private final Int2IntMap checksums;
-    private final FileChecksumsRequest checksumsRequest = new FileChecksumsRequest();
 
     private final Int2ObjectMap<FileRequest> requests;
 
@@ -40,7 +41,6 @@ public final class FileRequests {
         this.fileStore = fileStore;
 
         checksums = new Int2IntOpenHashMap(capacity);
-        checksumsRequest.thenAccept(response -> checksums.putAll(response.getFileToChecksum()));
 
         requests = new Int2ObjectOpenHashMap<>(capacity);
 
@@ -52,21 +52,22 @@ public final class FileRequests {
         this.fileDecompressedListener = fileDecompressedListener;
     }
 
-    public FileChecksumsRequest checksums(FileClient fileClient) {
-        if (!checksumsRequest.isDone())
-            fileClient.request(checksumsRequest);
-        return checksumsRequest;
-    }
-
     public FileRequest filePair(final int filePair) {
-        FileRequest request = requests.get(filePair);
+        FileRequest request;
+        synchronized (requests) {
+            request = requests.get(filePair);
+        }
 
-        if (request == null) {
+        if (request == null || filePair == FilePair.CHECKSUMS_FILE_PAIR) {
             request = new FileRequest(filePair);
-            requests.put(filePair, request);
 
+            synchronized (requests) {
+                requests.put(filePair, request);
+            }
             pendingRequests.offer(request);
         } else if (FilePair.index(filePair) > 0) {
+            // this code should ONLY be called on the game client thread
+
             FileResponse response = request.getNow(null);
             if (response != null) {
                 byte[] decompressedData = response.getDecompressedData();
@@ -79,6 +80,14 @@ public final class FileRequests {
         return request;
     }
 
+    public FileRequest file(final int index, final int file) {
+        return filePair(FilePair.create(index, file));
+    }
+
+    public FileRequest checksums() {
+        return filePair(FilePair.CHECKSUMS_FILE_PAIR);
+    }
+
     public void process(FileClient fileClient) {
         processCompletedResponses();
 
@@ -88,54 +97,53 @@ public final class FileRequests {
     }
 
     public void processPendingRequests(FileClient fileClient) {
-        final Channel channel = fileClient.getChannel();
+        final Channel channel = fileClient.getConnectedChannel();
         if (channel == null) return;
-
-        if (!channel.isOpen()) {
-            // await the full reconnect before resuming our thread...
-            fileClient.connect(true, null);
-        }
 
         boolean flush = false;
 
         final MessagePassingQueue<FileRequest> pendingRequests = this.pendingRequests;
-        while (!pendingRequests.isEmpty()) {
+        while (channel.isActive() && !pendingRequests.isEmpty()) {
             final FileRequest request = pendingRequests.poll();
             if (request == null) break;
 
             // make sure the request wasn't already completed, so that we ignore duplicate requests
             if (request.isDone()) continue;
 
-            int filePair = request.getFilePair();
+            final int filePair = request.getFilePair();
 
-            final int index = FilePair.index(filePair);
-            final int file = FilePair.file(filePair);
+            if (filePair != FilePair.CHECKSUMS_FILE_PAIR) {
+                final int index = FilePair.index(filePair);
+                final int file = FilePair.file(filePair);
 
-            if (index > 0) {
-                byte[] diskData = getDiskData(filePair);
-                if (checksumMatches(filePair, diskData)) {
-                    FileResponse response = new FileResponse(filePair, diskData);
+                if (index > 0) {
+                    byte[] diskData = getDiskData(filePair);
+                    if (checksumMatches(filePair, diskData)) {
+                        FileResponse response = new FileResponse(filePair, diskData);
 
-                    notifyDecompressed(response);
+                        notifyDecompressed(response);
 
-                    request.complete(response);
-                    continue;
+                        request.complete(response);
+                        continue;
+                    }
                 }
+
+                request.thenAcceptAsync(response -> {
+                    byte[] data = response.getData();
+                    if (data != null && data.length > 0) {
+                        FileIndex fileIndex = fileStore.getIndex(index);
+                        fileIndex.writeFile(file, data);
+                    }
+                });
             }
 
-            request.thenAcceptAsync(response -> {
-                byte[] data = response.getData();
-                if (data != null && data.length > 0) {
-                    FileIndex fileIndex = fileStore.getIndex(index);
-                    fileIndex.writeFile(file, data);
-                }
-            });
-
+            // XXX: what do we do if channel disconnected in the middle of writing?
+            // in that case, the request won't have been written to the right channel!
             channel.write(request, channel.voidPromise());
             flush = true;
         }
 
-        if (flush) {
+        if (flush && channel.isActive()) {
             channel.flush();
         }
     }
@@ -147,11 +155,17 @@ public final class FileRequests {
             final FileResponse response = completedResponses.poll();
             if (response == null) break;
 
-            int filePair = response.getFilePair();
-            FileRequest request = requests.get(filePair);
+            final int filePair = response.getFilePair();
+
+            FileRequest request;
+            synchronized (requests) {
+                request = requests.get(filePair);
+            }
             request.complete(response);
 
-            if (FilePair.index(filePair) > 0) {
+            if (filePair == FilePair.CHECKSUMS_FILE_PAIR) {
+                notifyChecksums(response);
+            } else if (FilePair.index(filePair) > 0) {
                 notifyDecompressed(response);
             }
         }
@@ -168,8 +182,34 @@ public final class FileRequests {
         }
     }
 
-    public void notifyChecksums(FileChecksumsResponse response) {
-        checksumsRequest.complete(response);
+    public void notifyChecksums(FileResponse response) {
+        final Int2IntMap checksums = this.checksums;
+        // the reason we synchronize for the whole block rather than just checksums.put
+        // is because we want it to stay locked from modification from other file requests in the meanwhile
+        synchronized (checksums) {
+            final byte[] compressedBytes = response.getData();
+            final byte[] decompressedBytes = GZIPDecompressor.getInstance().decompress(compressedBytes);
+
+            final ByteBuf data = Unpooled.wrappedBuffer(decompressedBytes);
+            try {
+                final int indexCount = data.readUnsignedByte();
+                for (int indexId = 0; indexId < indexCount; indexId++) {
+
+                    final int archiveCount = data.readUnsignedMedium();
+                    for (int archiveId = 0; archiveId < archiveCount; archiveId++) {
+
+                        final int crc32 = data.readInt();
+                        if (crc32 == 0) continue;
+
+                        final int filePair = FilePair.create(indexId, archiveId);
+
+                        checksums.put(filePair, crc32);
+                    }
+                }
+            } finally {
+                data.release();
+            }
+        }
     }
 
     public void notify(FileResponse response) {
@@ -183,11 +223,14 @@ public final class FileRequests {
     }
 
     public boolean checksumMatches(int filePair, int checksum) {
-        return checksums.get(filePair) == checksum;
+        return getChecksum(filePair) == checksum;
     }
 
     public int getChecksum(int filePair) {
-        return checksums.get(filePair);
+        final Int2IntMap checksums = this.checksums;
+        synchronized (checksums) {
+            return checksums.get(filePair);
+        }
     }
 
     public boolean checksum(int filePair, byte[] data) {
