@@ -1,4 +1,4 @@
 allprojects {
     group = "org.jire.swiftfup"
-    version = "3.1.0"
+    version = "3.2.0"
 }
