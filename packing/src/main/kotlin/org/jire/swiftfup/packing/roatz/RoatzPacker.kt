@@ -25,6 +25,9 @@ object RoatzPacker {
     const val DUMP_CUSTOM_MAPS_PATH = "data/roatz/custom_maps/"
 
     val customRegionIds = intArrayOf(
+        5169,
+        5425,
+
         //551,
         4657,
         4907,
