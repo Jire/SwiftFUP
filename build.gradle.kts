@@ -1,4 +1,5 @@
 allprojects {
-    group = "org.jire.swiftfup"
+    group = "org.jire"
     version = "3.2.0"
+    description = "Incredibly fast & efficient file update protocol"
 }
