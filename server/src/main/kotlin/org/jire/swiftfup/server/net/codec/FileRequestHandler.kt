@@ -4,7 +4,8 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import org.jire.swiftfup.server.FilePair
 import org.jire.swiftfup.server.net.FileResponses
-import java.io.IOException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * @author Jire
@@ -38,11 +39,15 @@ class FileRequestHandler(
 
     @Deprecated("Deprecated in Java")
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
-        if (cause !is IOException) {
-            cause.printStackTrace()
-        }
+        logger.error("Exception caught from remote \"${ctx.channel().remoteAddress()}\"", cause)
 
         ctx.close()
+    }
+
+    private companion object {
+
+        private val logger: Logger = LoggerFactory.getLogger(FileRequestHandler::class.java)
+
     }
 
 }
