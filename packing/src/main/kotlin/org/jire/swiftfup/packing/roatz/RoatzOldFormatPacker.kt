@@ -119,6 +119,7 @@ internal object RoatzOldFormatPacker {
                     cacheTo.put(1, modelId, data)
                 } else {
                     println("packed data \"$cacheFileName\"")
+                    cacheTo.remove(0, 9, cacheFileName)
                     cacheTo.put(0, 9, cacheFileName, data)
                 }
             }

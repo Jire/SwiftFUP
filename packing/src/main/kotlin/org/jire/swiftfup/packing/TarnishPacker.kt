@@ -3,7 +3,9 @@ package org.jire.swiftfup.packing
 import com.displee.cache.CacheLibrary
 import com.displee.cache.index.Index317
 import io.netty.buffer.Unpooled
+import org.jire.swiftfup.packing.roatz.RoatzPacker
 import java.io.File
+import java.nio.file.Path
 
 object TarnishPacker {
 
@@ -533,30 +535,62 @@ object TarnishPacker {
     }
 
     private fun maps(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
-        DefaultXteaRepository.load()
-
         val idx = Unpooled.buffer()
         idx.writeShort(0)
 
         var mapCount = 0
         var fileId = 0
-        for ((region, xtea) in DefaultXteaRepository.map.int2ObjectEntrySet()) {
+
+        for (region in RoatzPacker.customRegionIds) {
+            val mapFileId = fileId++
+            val landFileId = fileId++
+
+            val x = (region ushr 8) and 0xFF
+            val y = region and 0xFF
+
+            val mapName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}m${x}_$y"
+            val landName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}l${x}_$y"
+
+            val mapData = File(mapName).readBytes()
+            val landData = File(landName).readBytes()
+
+            cacheTo.remove(4, mapFileId)
+            cacheTo.put(4, mapFileId, mapData)
+
+            cacheTo.remove(4, landFileId)
+            cacheTo.put(4, landFileId, landData)
+
+            idx.writeShort(region)
+            idx.writeShort(mapFileId)
+            idx.writeShort(landFileId)
+
+            mapCount++
+
+            println("for custom region $region ($x,$y) map=$mapFileId and land=$landFileId")
+        }
+
+        val xteas = DefaultXteaRepository.load(path = Path.of("data", "osrs", "cache216", "xteas.json"))
+        val defaultXtea = intArrayOf(0, 0, 0, 0)
+
+        for (region in 0..65535) {
+            if (RoatzPacker.customRegionIds.contains(region)) continue
+
             val x = (region ushr 8) and 0xFF
             val y = region and 0xFF
 
             val mapFileId = fileId++
             val mapName = "m${x}_$y"
-            val map = cacheFrom.data(5, mapName, 0)!!
+            val mapData = cacheFrom.data(5, mapName, 0) ?: continue
 
             val landFileId = fileId++
             val landName = "l${x}_$y"
-            val land = cacheFrom.data(5, landName, 0, xtea.key)!!
+            val landData = cacheFrom.data(5, landName, 0, xteas.get(region)?.key ?: defaultXtea) ?: continue
 
             cacheTo.remove(4, mapFileId)
-            cacheTo.put(4, mapFileId, map)
+            cacheTo.put(4, mapFileId, mapData)
 
             cacheTo.remove(4, landFileId)
-            cacheTo.put(4, landFileId, land)
+            cacheTo.put(4, landFileId, landData)
 
             idx.writeShort(region)
             idx.writeShort(mapFileId)

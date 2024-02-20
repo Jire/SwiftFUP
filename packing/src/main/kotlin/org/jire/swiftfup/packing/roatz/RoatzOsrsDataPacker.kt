@@ -307,6 +307,8 @@ internal object RoatzOsrsDataPacker {
         }
 
         val xteas = DefaultXteaRepository.load(path = Path.of("data", "osrs", "cache216", "xteas.json"))
+        println("Loaded ${xteas.size} xteas")
+
         val defaultXtea = intArrayOf(0, 0, 0, 0)
         for (region in 0..65535) {
             if (RoatzPacker.customRegionIds.contains(region)) continue
