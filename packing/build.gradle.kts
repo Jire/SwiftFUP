@@ -19,6 +19,8 @@ dependencies {
     implementation(libs.gson)
 
     implementation(libs.runelite.cache)
+
+    implementation(libs.tinify)
 }
 
 val defaultJvmArgs = arrayOf(

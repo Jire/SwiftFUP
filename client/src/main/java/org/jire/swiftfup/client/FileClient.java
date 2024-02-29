@@ -5,8 +5,10 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.SocketAddress;
+import java.util.function.Consumer;
 
 import static org.jire.swiftfup.client.codec.HandshakeResponseHandler.HANDSHAKE_RESPONSE_ATTRIBUTE_KEY;
 
@@ -20,6 +22,7 @@ public final class FileClient {
 
     private final FileRequests fileRequests;
     private final Bootstrap bootstrap;
+    private final Consumer<Channel> whenReconnected;
     private final SocketAddress[] remoteAddresses;
 
     private volatile Channel channel;
@@ -27,6 +30,7 @@ public final class FileClient {
     public FileClient(FileRequests fileRequests,
                       EventLoopGroup eventLoopGroup,
                       Class<? extends Channel> channelClass,
+                      @Nullable Consumer<Channel> whenReconnected,
                       SocketAddress... remoteAddresses) {
         if (remoteAddresses == null || remoteAddresses.length == 0) {
             throw new IllegalArgumentException("Need to pass at least one address");
@@ -47,6 +51,8 @@ public final class FileClient {
             e.printStackTrace();
         }
 
+        this.whenReconnected = whenReconnected;
+
         this.remoteAddresses = remoteAddresses;
     }
 
@@ -55,7 +61,8 @@ public final class FileClient {
     }
 
     public Channel createChannelFuture(final boolean reconnect,
-                                       final Runnable whileWaiting,
+                                       @Nullable final Runnable whileWaiting,
+                                       final Consumer<Channel> whenReconnected,
                                        final long timeoutNanos) {
         final Bootstrap bootstrap = this.bootstrap
                 .handler(new FileClientChannelInitializer(fileRequests));
@@ -91,6 +98,10 @@ public final class FileClient {
                     fileRequests.checksums();
                 }
 
+                if (whenReconnected != null) {
+                    whenReconnected.accept(channel);
+                }
+
                 return channel;
             }
 
@@ -105,12 +116,18 @@ public final class FileClient {
             throw new FileClientConnectInterruptedException("Thread was interrupted during connect");
         }
 
-        return createChannelFuture(reconnect, whileWaiting,
+        return createChannelFuture(reconnect, whileWaiting, whenReconnected,
                 Math.min(timeoutNanos + DEFAULT_TIMEOUT_NANOS, MAX_TIMEOUT_NANOS));
     }
 
-    public Channel connect(final boolean reconnect, final Runnable whileWaiting) {
-        final Channel channel = createChannelFuture(reconnect, whileWaiting, DEFAULT_TIMEOUT_NANOS);
+    public Channel connect(final boolean reconnect,
+                           @Nullable final Runnable whileWaiting,
+                           @Nullable final Consumer<Channel> whenReconnected) {
+        final Channel channel = createChannelFuture(
+                reconnect,
+                whileWaiting,
+                whenReconnected,
+                DEFAULT_TIMEOUT_NANOS);
         this.channel = channel;
         return channel;
     }
@@ -124,7 +141,7 @@ public final class FileClient {
         }
 
         // await the full reconnect before resuming our thread...
-        return connect(true, null);
+        return connect(true, null, whenReconnected);
     }
 
 }

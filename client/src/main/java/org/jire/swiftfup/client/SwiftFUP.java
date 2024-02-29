@@ -1,6 +1,10 @@
 package org.jire.swiftfup.client;
 
+import io.netty.channel.Channel;
+import org.jetbrains.annotations.Nullable;
+
 import java.net.SocketAddress;
+import java.util.function.Consumer;
 
 /**
  * @author Jire
@@ -83,10 +87,11 @@ public final class SwiftFUP {
     }
 
     public FileClient initializeFileClient(FileClientGroup fileClientGroup,
-                                           Runnable whileWaiting,
+                                           @Nullable Runnable whileWaiting,
+                                           @Nullable Consumer<Channel> whenReconnected,
                                            SocketAddress... remoteAddresses) {
-        FileClient fileClient = fileClientGroup.createClient(fileRequests, remoteAddresses);
-        fileClient.connect(false, whileWaiting);
+        FileClient fileClient = fileClientGroup.createClient(fileRequests, whenReconnected, remoteAddresses);
+        fileClient.connect(false, whileWaiting, whenReconnected);
         return this.fileClient = fileClient;
     }
 

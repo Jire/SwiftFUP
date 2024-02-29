@@ -10,8 +10,10 @@ import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.SocketAddress;
+import java.util.function.Consumer;
 
 /**
  * @author Jire
@@ -23,11 +25,13 @@ public interface FileClientGroup {
     Class<? extends Channel> getChannelClass();
 
     default FileClient createClient(FileRequests fileRequests,
+                                    @Nullable Consumer<Channel> whenReconnected,
                                     SocketAddress... remoteAddresses) {
         return new FileClient(
                 fileRequests,
                 getEventLoopGroup(),
                 getChannelClass(),
+                whenReconnected,
                 remoteAddresses);
     }
 

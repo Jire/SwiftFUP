@@ -10,6 +10,8 @@ dependencies {
 
     implementation(libs.slf4j.api)
     runtimeOnly(libs.slf4j.simple)
+
+    implementation(libs.annotations)
 }
 
 java.toolchain.languageVersion.set(JavaLanguageVersion.of(8))
