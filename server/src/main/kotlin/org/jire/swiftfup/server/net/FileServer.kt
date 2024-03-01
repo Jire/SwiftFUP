@@ -6,7 +6,9 @@ import io.netty.channel.ChannelOption
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.ServerChannel
 import io.netty.channel.WriteBufferWaterMark
-import io.netty.channel.epoll.*
+import io.netty.channel.epoll.EpollChannelOption
+import io.netty.channel.epoll.EpollEventLoopGroup
+import io.netty.channel.epoll.EpollMode
 import io.netty.channel.kqueue.KQueue
 import io.netty.channel.kqueue.KQueueEventLoopGroup
 import io.netty.channel.kqueue.KQueueServerSocketChannel
@@ -79,13 +81,13 @@ class FileServer(
     private companion object {
 
         fun eventLoopGroup(numThreads: Int = 0) = when {
-            Epoll.isAvailable() -> EpollEventLoopGroup(numThreads)
+            //Epoll.isAvailable() -> EpollEventLoopGroup(numThreads)
             KQueue.isAvailable() -> KQueueEventLoopGroup(numThreads)
             else -> NioEventLoopGroup(numThreads)
         }
 
         fun serverChannelClass(group: EventLoopGroup): Class<out ServerChannel> = when (group) {
-            is EpollEventLoopGroup -> EpollServerSocketChannel::class.java
+            //is EpollEventLoopGroup -> EpollServerSocketChannel::class.java
             is KQueueEventLoopGroup -> KQueueServerSocketChannel::class.java
             else -> NioServerSocketChannel::class.java
         }
