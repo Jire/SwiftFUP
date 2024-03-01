@@ -43,7 +43,9 @@ public final class FileClient {
                 .group(eventLoopGroup)
                 .option(ChannelOption.SO_KEEPALIVE, true)
                 .option(ChannelOption.TCP_NODELAY, true)
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120_000);
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120_000)
+                .option(ChannelOption.SO_SNDBUF, 2 << 15)
+                .option(ChannelOption.SO_RCVBUF, 2 << 15);
 
         this.whenReconnected = whenReconnected;
 
