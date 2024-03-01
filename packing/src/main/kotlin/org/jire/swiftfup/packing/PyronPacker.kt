@@ -15,15 +15,8 @@ object PyronPacker {
         val cacheFrom = CacheLibrary.create("data/osrs/cache215/")
         val cacheTo = CacheLibrary.create(cachePath)
 
-        if (false) {
-            File("loc.dat").writeBytes(cacheTo.data(0, 2, "loc.dat")!!)
-            File("loc.idx").writeBytes(cacheTo.data(0, 2, "loc.idx")!!)
-
-            File("map_index").writeBytes(cacheTo.data(0, 5, "map_index")!!)
-            return
-        }
-
         models(cacheFrom, cacheTo)
+        customModels(cacheTo)
         objects(cacheFrom, cacheTo)
 
         cacheTo.update()
@@ -106,6 +99,20 @@ object PyronPacker {
         indexTo.update()
 
         println("models count $count")
+    }
+
+    private fun customModels(cacheTo: CacheLibrary, customModelPath: String = "data/pyron/custom_models/") {
+        val indexTo = cacheTo.index(1)
+
+        val modelIds = File(customModelPath).listFiles()!!.map { it.name.toInt() }
+        for (modelId in modelIds) {
+            val data = File("$customModelPath$modelId").readBytes()
+            cacheTo.put(1, modelId, data)
+        }
+
+        indexTo.update()
+
+        println("packed ${modelIds.size} custom models")
     }
 
     private fun modelsNew(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
