@@ -50,12 +50,6 @@ class FileServer(
             WriteBufferWaterMark(2 shl 20, 2 shl 24)
         )
 
-        try {
-            childOption(ChannelOption.IP_TOS, 0b100_000_10)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
         childHandler(FileServerChannelInitializer(version, fileResponses))
 
         if (parentGroup is EpollEventLoopGroup) {
