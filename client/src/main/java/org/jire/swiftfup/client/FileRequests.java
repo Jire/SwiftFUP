@@ -9,6 +9,8 @@ import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.zip.CRC32;
 
@@ -16,6 +18,8 @@ import java.util.zip.CRC32;
  * @author Jire
  */
 public final class FileRequests {
+
+    private static final Logger logger = LoggerFactory.getLogger(FileResponse.class);
 
     private final int capacity;
     private final FileStore fileStore;
@@ -160,6 +164,11 @@ public final class FileRequests {
             FileRequest request;
             synchronized (requests) {
                 request = requests.get(filePair);
+            }
+            if (request == null) {
+                logger.warn("Request file pair {} was completed, but did not have an initial request",
+                        FilePair.toString(filePair));
+                continue;
             }
             request.complete(response);
 
