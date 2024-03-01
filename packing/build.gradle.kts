@@ -21,6 +21,9 @@ dependencies {
     implementation(libs.runelite.cache)
 
     implementation(libs.tinify)
+
+    implementation(libs.slf4j.api)
+    implementation(libs.slf4j.simple)
 }
 
 val defaultJvmArgs = arrayOf(
@@ -56,5 +59,6 @@ fun execTask(
 execTask("tarnishPacker", "org.jire.swiftfup.packing.TarnishPacker")
 execTask("ethscapePacker", "org.jire.swiftfup.packing.EthscapePacker")
 execTask("roatzPacker", "org.jire.swiftfup.packing.roatz.RoatzPacker")
+execTask("roatzImageOptimizer", "org.jire.swiftfup.packing.roatz.RoatzImageOptimizer")
 execTask("kozaroPacker", "org.jire.swiftfup.packing.KozaroPacker")
 execTask("pyronPacker", "org.jire.swiftfup.packing.PyronPacker")
