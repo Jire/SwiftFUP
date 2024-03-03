@@ -8,7 +8,9 @@ import java.io.File
 object RoatzPacker {
 
     private const val CACHE_FROM_PATH = "data/osrs/cache216/"
-    internal const val CACHE_TO_PATH = "../server/cache/"
+    private const val CACHE_TO_PATH = "../server/cache/"
+    private const val CACHE_ROATZ_PATH = "data/roatz/"
+    private const val CACHE_ROATZ_CACHE_PATH = "${CACHE_ROATZ_PATH}cache/"
 
     private const val PACK_OLD_FORMAT = true
     private const val PACK_OSRS_DATA = true
@@ -22,7 +24,7 @@ object RoatzPacker {
     private const val SCAN_FOR_LARGE_FILES_MIN_BYTES = 8192
 
     private const val DUMP_CUSTOM_MAPS = true
-    const val DUMP_CUSTOM_MAPS_PATH = "data/roatz/custom_maps/"
+    const val DUMP_CUSTOM_MAPS_PATH = "${CACHE_ROATZ_PATH}custom_maps/"
 
     val customRegionIds = intArrayOf(
         5169,
@@ -170,7 +172,7 @@ object RoatzPacker {
         if (PACK_TEXTURES) {
             val toIndexId = 7
             val indexTo = if (cacheTo.exists(toIndexId)) cacheTo.index(toIndexId).apply { clear() }
-            else cacheTo.createIndex()
+            else cacheTo.createIndex().also { cacheTo.reload() }
 
             val indexFrom = cacheFrom.index(8)
             indexFrom.cache()
@@ -194,7 +196,7 @@ object RoatzPacker {
 
         if (PACK_OSRS_DATA) RoatzOsrsDataPacker.pack(cacheFrom, cacheTo)
 
-        if (PACK_OLD_FORMAT) RoatzOldFormatPacker.pack(CACHE_TO_PATH, cacheTo)
+        if (PACK_OLD_FORMAT) RoatzOldFormatPacker.pack(CACHE_ROATZ_CACHE_PATH, cacheTo)
 
         cacheTo.update()
         cacheTo.close()

@@ -21,6 +21,7 @@ dependencies {
     implementation(libs.runelite.cache)
 
     implementation(libs.tinify)
+    implementation(libs.pngtastic)
 
     implementation(libs.slf4j.api)
     implementation(libs.slf4j.simple)
