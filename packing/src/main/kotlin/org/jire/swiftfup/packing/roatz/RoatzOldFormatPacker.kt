@@ -29,7 +29,7 @@ internal object RoatzOldFormatPacker {
 
         var amount = 0
         for (soundFile in File("${cachePath}Sounds").listFiles()!!) {
-            val id = soundFile.nameWithoutExtension.toInt()
+            val id = soundFile.nameWithoutExtension.toIntOrNull() ?: continue
             val data = soundFile.readBytes()
 
             indexBuf.writeShort(id)
