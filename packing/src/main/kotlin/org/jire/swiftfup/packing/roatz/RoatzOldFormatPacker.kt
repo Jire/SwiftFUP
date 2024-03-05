@@ -33,6 +33,7 @@ internal object RoatzOldFormatPacker {
             val data = soundFile.readBytes()
 
             indexBuf.writeShort(id)
+            cacheTo.remove(SOUNDS_INDEX, id)
             cacheTo.put(SOUNDS_INDEX, id, data)
             amount++
         }
