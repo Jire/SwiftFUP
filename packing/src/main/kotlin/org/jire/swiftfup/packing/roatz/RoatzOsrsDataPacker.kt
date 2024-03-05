@@ -44,7 +44,7 @@ internal object RoatzOsrsDataPacker {
         indexFrom.cache()
 
         val indexTo = cacheTo.index(1)
-        //indexTo.clear()
+        indexTo.clear()
 
         var count = 0
         for (archive in indexFrom.archives()) {
