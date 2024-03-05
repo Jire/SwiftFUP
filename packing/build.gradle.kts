@@ -8,6 +8,8 @@ kotlin {
 
 dependencies {
     implementation(project(":common"))
+    implementation(project(":client"))
+    implementation(project(":server"))
 
     implementation(libs.fastutil)
 

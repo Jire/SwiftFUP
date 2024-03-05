@@ -131,14 +131,23 @@ object RoatzPacker {
 
         if (SCAN_FOR_LARGE_FILES) {
             for (index in cacheTo.indices()) {
-                for (archive in cacheTo.index(index.id).archives()) {
-                    for (file in archive.files()) {
+                val indexId = index.id
+
+                if (indexId != 0) {
+                    index.cache() // reads all archive data
+                }
+
+                val archives = index.archives()
+                for (archive in archives) {
+                    val files = archive.files()
+                    for (file in files) {
                         val fileSize = file.data?.size ?: -1
                         if (fileSize >= SCAN_FOR_LARGE_FILES_MIN_BYTES)
                             println("index ${index.id}: ${archive.id}:${file.id} size is $fileSize")
                     }
                 }
             }
+
             return
         }
 
