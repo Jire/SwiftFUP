@@ -171,8 +171,14 @@ object RoatzPacker {
                 val x = (region ushr 8) and 0xFF
                 val y = region and 0xFF
 
-                val mapName = "${DUMP_CUSTOM_MAPS_PATH}m${x}_$y"
-                val landName = "${DUMP_CUSTOM_MAPS_PATH}l${x}_$y"
+                val folder = "$DUMP_CUSTOM_MAPS_PATH$region/"
+                val folderFile = File(folder)
+                if (!folderFile.exists()) {
+                    folderFile.mkdirs()
+                }
+
+                val mapName = "${folder}m.dat"
+                val landName = "${folder}l.dat"
 
                 File(mapName).writeBytes(mapData)
                 File(landName).writeBytes(landData)

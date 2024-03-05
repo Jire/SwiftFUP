@@ -286,9 +286,9 @@ internal object RoatzOsrsDataPacker {
 
             val x = (region ushr 8) and 0xFF
             val y = region and 0xFF
-
-            val mapName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}m${x}_$y"
-            val landName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}l${x}_$y"
+            
+            val mapName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}$region/m.dat"
+            val landName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}$region/l.dat"
 
             val mapData = File(mapName).readBytes()
             val landData = File(landName).readBytes()
