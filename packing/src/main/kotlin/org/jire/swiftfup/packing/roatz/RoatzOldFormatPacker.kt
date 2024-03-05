@@ -22,7 +22,7 @@ internal object RoatzOldFormatPacker {
     private const val SOUNDS_INDEX = 3
 
     private fun sounds(cachePath: String, cacheTo: CacheLibrary) {
-        val index = cacheTo.index(SOUNDS_INDEX).apply { clear() }
+        val index = cacheTo.index(SOUNDS_INDEX).apply { cache(); clear() }
 
         val indexBuf = Unpooled.buffer()
         indexBuf.writeShort(0)
