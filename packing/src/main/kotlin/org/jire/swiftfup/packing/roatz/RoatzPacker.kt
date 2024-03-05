@@ -14,7 +14,9 @@ object RoatzPacker {
 
     private const val PACK_OLD_FORMAT = true
     private const val PACK_OSRS_DATA = true
-    private const val PACK_TEXTURES = true
+
+    private const val PACK_OSRS_SPRITES_INDEX = true
+    private const val OSRS_SPRITES_INDEX_ID = 6
 
     private const val REBUILD = true
     private const val REBUILD_DIRECTORY_NAME = "rebuild"
@@ -122,8 +124,7 @@ object RoatzPacker {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        Index317.addMetaFiles("sounds_version", "sounds_crc")
-        Index317.addMetaFiles("sprites_version", "sprites_crc")
+        Index317.addMetaFiles("custom_sprites_version", "custom_sprites_crc")
         Index317.addMetaFiles("osrs_sprites_version", "osrs_sprites_crc")
 
         val cacheFrom = CacheLibrary.create(CACHE_FROM_PATH)
@@ -178,10 +179,13 @@ object RoatzPacker {
             }
         }
 
-        if (PACK_TEXTURES) {
-            val toIndexId = 7
-            val indexTo = if (cacheTo.exists(toIndexId)) cacheTo.index(toIndexId).apply { clear() }
-            else cacheTo.createIndex().also { cacheTo.reload() }
+        if (PACK_OSRS_SPRITES_INDEX) {
+            val indexTo =
+                if (cacheTo.exists(OSRS_SPRITES_INDEX_ID)) {
+                    cacheTo.index(OSRS_SPRITES_INDEX_ID).apply { clear() }
+                } else {
+                    cacheTo.createIndex().also { cacheTo.reload() }
+                }
 
             val indexFrom = cacheFrom.index(8)
             indexFrom.cache()
@@ -196,7 +200,7 @@ object RoatzPacker {
                     val data = file.data!!
 
                     println("put ${archive.id}:${file.id} with ${data.size} bytes")
-                    cacheTo.put(toIndexId, archive.id, file.id, data)
+                    cacheTo.put(OSRS_SPRITES_INDEX_ID, archive.id, file.id, data)
                 }
             }
 

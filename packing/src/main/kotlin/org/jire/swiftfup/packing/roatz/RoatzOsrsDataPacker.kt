@@ -271,6 +271,8 @@ internal object RoatzOsrsDataPacker {
         println("object highest $highestFileId")
     }
 
+    private const val MAPS_INDEX = 4
+
     private fun maps(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
         val idx = Unpooled.buffer()
         idx.writeShort(0)
@@ -291,11 +293,11 @@ internal object RoatzOsrsDataPacker {
             val mapData = File(mapName).readBytes()
             val landData = File(landName).readBytes()
 
-            cacheTo.remove(4, mapFileId)
-            cacheTo.put(4, mapFileId, mapData)
+            cacheTo.remove(MAPS_INDEX, mapFileId)
+            cacheTo.put(MAPS_INDEX, mapFileId, mapData)
 
-            cacheTo.remove(4, landFileId)
-            cacheTo.put(4, landFileId, landData)
+            cacheTo.remove(MAPS_INDEX, landFileId)
+            cacheTo.put(MAPS_INDEX, landFileId, landData)
 
             idx.writeShort(region)
             idx.writeShort(mapFileId)
@@ -325,11 +327,11 @@ internal object RoatzOsrsDataPacker {
             val mapFileId = fileId++
             val landFileId = fileId++
 
-            cacheTo.remove(4, mapFileId)
-            cacheTo.put(4, mapFileId, mapData)
+            cacheTo.remove(MAPS_INDEX, mapFileId)
+            cacheTo.put(MAPS_INDEX, mapFileId, mapData)
 
-            cacheTo.remove(4, landFileId)
-            cacheTo.put(4, landFileId, landData)
+            cacheTo.remove(MAPS_INDEX, landFileId)
+            cacheTo.put(MAPS_INDEX, landFileId, landData)
 
             idx.writeShort(region)
             idx.writeShort(mapFileId)
@@ -347,10 +349,11 @@ internal object RoatzOsrsDataPacker {
 
         val compressedArray = GzipCompression.compress(idxArray)
 
-        cacheTo.put(0, 5, "map_index", compressedArray)
+        cacheTo.put(0, 5, "map_index.gz", compressedArray)
+        cacheTo.remove(0, 5, "map_index") // new .gz extension only needed
 
         cacheTo.index(0).update()
-        cacheTo.index(4).update()
+        cacheTo.index(MAPS_INDEX).update()
     }
 
     private fun frameBases(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
