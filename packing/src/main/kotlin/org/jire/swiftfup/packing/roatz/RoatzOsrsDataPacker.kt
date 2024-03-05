@@ -280,7 +280,7 @@ internal object RoatzOsrsDataPacker {
         var mapCount = 0
         var fileId = 0
 
-        for (region in RoatzPacker.customRegionIds) {
+        for (region in roatzCustomRegionIds) {
             val mapFileId = fileId++
             val landFileId = fileId++
 
@@ -313,7 +313,7 @@ internal object RoatzOsrsDataPacker {
 
         val defaultXtea = intArrayOf(0, 0, 0, 0)
         for (region in 0..65535) {
-            if (RoatzPacker.customRegionIds.contains(region)) continue
+            if (roatzCustomRegionIds.contains(region)) continue
 
             val x = (region ushr 8) and 0xFF
             val y = region and 0xFF

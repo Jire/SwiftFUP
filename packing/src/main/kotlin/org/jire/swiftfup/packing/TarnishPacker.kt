@@ -4,6 +4,7 @@ import com.displee.cache.CacheLibrary
 import com.displee.cache.index.Index317
 import io.netty.buffer.Unpooled
 import org.jire.swiftfup.packing.roatz.RoatzPacker
+import org.jire.swiftfup.packing.roatz.roatzCustomRegionIds
 import java.io.File
 import java.nio.file.Path
 
@@ -541,7 +542,7 @@ object TarnishPacker {
         var mapCount = 0
         var fileId = 0
 
-        for (region in RoatzPacker.customRegionIds) {
+        for (region in roatzCustomRegionIds) {
             val mapFileId = fileId++
             val landFileId = fileId++
 
@@ -573,7 +574,7 @@ object TarnishPacker {
         val defaultXtea = intArrayOf(0, 0, 0, 0)
 
         for (region in 0..65535) {
-            if (RoatzPacker.customRegionIds.contains(region)) continue
+            if (roatzCustomRegionIds.contains(region)) continue
 
             val x = (region ushr 8) and 0xFF
             val y = region and 0xFF
