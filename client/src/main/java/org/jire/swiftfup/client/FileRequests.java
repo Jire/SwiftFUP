@@ -74,10 +74,7 @@ public final class FileRequests {
 
             FileResponse response = request.getNow(null);
             if (response != null) {
-                byte[] decompressedData = response.getDecompressedData();
-                if (decompressedData != null) {
-                    fileDecompressedListener.decompressed(response);
-                }
+                fileDecompressedListener.decompressed(response);
             }
         }
 
@@ -101,12 +98,26 @@ public final class FileRequests {
     }
 
     public void processPendingRequests(FileClient fileClient) {
+        final Channel previousChannel = fileClient.getChannel();
         final Channel channel = fileClient.getConnectedChannel();
         if (channel == null) return;
 
+        final MessagePassingQueue<FileRequest> pendingRequests = this.pendingRequests;
+
+        final boolean reconnected = previousChannel != channel;
+        if (reconnected) {
+            final Int2ObjectMap<FileRequest> requests = this.requests;
+            synchronized (requests) {
+                for (FileRequest value : requests.values()) {
+                    if (!value.isDone()) {
+                        pendingRequests.offer(value);
+                    }
+                }
+            }
+        }
+
         boolean flush = false;
 
-        final MessagePassingQueue<FileRequest> pendingRequests = this.pendingRequests;
         while (channel.isActive() && !pendingRequests.isEmpty()) {
             final FileRequest request = pendingRequests.poll();
             if (request == null) break;
@@ -118,10 +129,9 @@ public final class FileRequests {
 
             if (filePair != FilePair.CHECKSUMS_FILE_PAIR) {
                 final int index = FilePair.index(filePair);
-                final int file = FilePair.file(filePair);
 
                 if (index > 0) {
-                    byte[] diskData = getDiskData(filePair);
+                    final byte[] diskData = getDiskData(filePair);
                     if (checksumMatches(filePair, diskData)) {
                         FileResponse response = new FileResponse(filePair, diskData);
 
@@ -131,18 +141,8 @@ public final class FileRequests {
                         continue;
                     }
                 }
-
-                request.thenAcceptAsync(response -> {
-                    byte[] data = response.getData();
-                    if (data != null && data.length > 0) {
-                        FileIndex fileIndex = fileStore.getIndex(index);
-                        fileIndex.writeFile(file, data);
-                    }
-                });
             }
 
-            // XXX: what do we do if channel disconnected in the middle of writing?
-            // in that case, the request won't have been written to the right channel!
             channel.write(request, channel.voidPromise());
             flush = true;
         }
@@ -174,8 +174,19 @@ public final class FileRequests {
 
             if (filePair == FilePair.CHECKSUMS_FILE_PAIR) {
                 notifyChecksums(response);
-            } else if (FilePair.index(filePair) > 0) {
-                notifyDecompressed(response);
+            } else {
+                final int index = FilePair.index(filePair);
+                if (index > 0) {
+                    notifyDecompressed(response);
+                }
+
+                final int file = FilePair.file(filePair);
+
+                final byte[] data = response.getData();
+                if (data != null && data.length > 0) {
+                    FileIndex fileIndex = fileStore.getIndex(index);
+                    fileIndex.writeFile(file, data);
+                }
             }
         }
     }
@@ -226,9 +237,8 @@ public final class FileRequests {
     }
 
     public void notifyDecompressed(FileResponse response) {
-        if (response.setDecompressedData(fileStore) != null) {
-            decompressedResponses.offer(response);
-        }
+        response.setDecompressedData(fileStore);
+        decompressedResponses.offer(response);
     }
 
     public boolean checksumMatches(int filePair, int checksum) {

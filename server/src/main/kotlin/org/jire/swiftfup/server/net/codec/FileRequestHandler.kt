@@ -1,8 +1,10 @@
 package org.jire.swiftfup.server.net.codec
 
+import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import org.jire.swiftfup.server.FilePair
+import org.jire.swiftfup.server.FilePair.Companion.writeFilePair
 import org.jire.swiftfup.server.net.FileResponses
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -16,9 +18,18 @@ class FileRequestHandler(
 
     override fun channelRead0(ctx: ChannelHandlerContext, msg: FilePair) {
         val response = responses[msg]
-            ?: throw IllegalStateException("Request was null for $msg")
+        if (response == null) {
+            logger.warn("Request was null for {}", msg)
 
-        ctx.write(response.retainedDuplicate(), ctx.voidPromise())
+            val byteBufSize = FilePair.SIZE_BYTES + 4
+            val byteBuf = Unpooled.directBuffer(byteBufSize, byteBufSize)
+                .writeFilePair(msg)
+                .writeInt(0)
+
+            ctx.write(byteBuf, ctx.voidPromise())
+        } else {
+            ctx.write(response.retainedDuplicate(), ctx.voidPromise())
+        }
     }
 
     override fun channelReadComplete(ctx: ChannelHandlerContext) {
