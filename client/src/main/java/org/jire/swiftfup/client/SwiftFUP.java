@@ -19,7 +19,7 @@ public final class SwiftFUP {
 
     public static final AutoProcessor DEFAULT_AUTO_PROCESSOR = AutoProcessors.FAST;
 
-    public static final int DEFAULT_EXPECTED_REQUESTS = 2 << 15;
+    public static final int DEFAULT_EXPECTED_REQUESTS = 2 << 18;
 
     public static SwiftFUP create(FileStore fileStore,
                                   FileDecompressedListener fileDecompressedListener,
