@@ -24,6 +24,20 @@ dependencies {
 
 application {
     mainClass.set("org.jire.swiftfup.server.Main")
+    applicationDefaultJvmArgs += arrayOf(
+        "-XX:-OmitStackTraceInFastThrow",
+
+        "--enable-preview",
+        "-noverify",
+
+        "-XX:+UseZGC",
+
+        "-Xms1g",
+
+        "-XX:CompileThreshold=1500",
+        "-XX:+UseStringDeduplication",
+        "-XX:AutoBoxCacheMax=65535"
+    )
 }
 
 tasks.named<Jar>("jar").configure {
