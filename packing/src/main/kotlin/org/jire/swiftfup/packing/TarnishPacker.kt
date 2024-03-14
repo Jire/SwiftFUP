@@ -12,14 +12,16 @@ object TarnishPacker {
 
     private const val REBUILD = false
     private const val SPEC_BAR_MODELS = false
+    private const val SOUNDS = false
 
     @JvmStatic
     fun main(args: Array<String>) {
         Index317.addMetaFiles("osrs_sprites_version", "osrs_sprites_crc")
+        Index317.addMetaFiles("osrs_sounds_version", "osrs_sounds_crc")
 
         val cachePath = "../server/cache/"
         if (SPEC_BAR_MODELS) {
-            val cacheFrom = CacheLibrary.create("../server/cache-tarnishps/")
+            val cacheFrom = CacheLibrary.create("../packing/data/tarnishps/old-cache/")
             val cacheTo = CacheLibrary.create(cachePath)
 
             for (modelId in 18552..18562) {
@@ -46,7 +48,22 @@ object TarnishPacker {
             return
         }
 
-        if (true) {
+        if (SOUNDS) {
+            if (true) {
+                println(cacheTo.data(SOUNDS_INDEX, 2720)!!.size)
+                return
+            }
+
+            sounds(cachePath, cacheTo)
+
+            cacheTo.update()
+            cacheTo.close()
+
+            cacheFrom.close()
+            return
+        }
+
+        if (false) {
             val toIndexId = 5
             val indexTo = if (cacheTo.exists(toIndexId)) cacheTo.index(toIndexId).apply { clear() }
             else cacheTo.createIndex()
@@ -88,6 +105,48 @@ object TarnishPacker {
         cacheTo.close()
 
         cacheFrom.close()
+    }
+
+    private const val SOUNDS_INDEX = 6
+
+    private fun sounds(cachePath: String, cacheTo: CacheLibrary) {
+        if (false) {
+            cacheTo.createIndex()
+            /*val index = cacheTo.index(SOUNDS_INDEX)
+            index.cache()
+            for (archive in index.archives()) {
+                cacheTo.remove(SOUNDS_INDEX, archive.id)
+                println("removed archive ${archive.id}")
+            }
+            index.update()*/
+            return
+        }
+
+        val index = cacheTo.index(SOUNDS_INDEX)
+
+        val indexBuf = Unpooled.buffer()
+        indexBuf.writeShort(0)
+
+        var amount = 0
+        for (soundFile in File("../packing/data/tarnishps/sounds/").listFiles()!!) {
+            if (soundFile.extension != "wav") continue
+
+            val id = soundFile.nameWithoutExtension.toIntOrNull() ?: continue
+            val data = soundFile.readBytes()
+
+            indexBuf.writeShort(id)
+            cacheTo.put(SOUNDS_INDEX, id, data)
+            amount++
+        }
+
+        indexBuf.setShort(0, amount)
+
+        val indexBufArray = ByteArray(indexBuf.writerIndex())
+        indexBuf.readBytes(indexBufArray)
+
+        index.update()
+
+        println("Packed $amount sounds")
     }
 
     private fun models(cacheFrom: CacheLibrary, cacheTo: CacheLibrary) {
