@@ -272,12 +272,18 @@ public final class FileRequests {
     }
 
     public boolean checksumMatches(int filePair, byte[] data) {
-        return (isIgnoreChecksums() && data != null) || checksumMatchesData(getChecksum(filePair), data);
+        if (data == null) return false;
+        if (isIgnoreChecksums()) return true;
+
+        final int checksum = getChecksum(filePair);
+        return checksumMatchesData(checksum, data);
     }
 
     private static final ThreadLocal<CRC32> threadLocalCRC32 = ThreadLocal.withInitial(CRC32::new);
 
     public static boolean checksumMatchesData(int checksum, byte[] data) {
+        if (data == null) return false;
+
         int dataChecksum = getChecksum(data);
         return checksum == dataChecksum;
     }
