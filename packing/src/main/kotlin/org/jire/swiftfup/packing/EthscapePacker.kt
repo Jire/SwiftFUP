@@ -602,7 +602,7 @@ object EthscapePacker {
         }
 
         DefaultXteaRepository.load()
-        for ((region, xtea) in DefaultXteaRepository.map.int2ObjectEntrySet()) {
+        for ((region, xtea) in DefaultXteaRepository.load().int2ObjectEntrySet()) {
             if (customRegionIds.contains(region)) continue
 
             val mapFileId = fileId++

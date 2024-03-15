@@ -8,28 +8,20 @@ import kotlin.io.path.bufferedReader
 
 object DefaultXteaRepository : XteaRepository {
 
-    val map: Int2ObjectMap<Xtea> = Int2ObjectOpenHashMap()
-
-    @JvmStatic
-    @JvmOverloads
-    fun load(
-        path: Path = Path.of("data", "osrs", "cache218", "xteas.json"),
-        gson: Gson = Gson()
+    override fun load(
+        path: Path,
+        gson: Gson
     ): Int2ObjectMap<Xtea> {
+        val map: Int2ObjectMap<Xtea> = Int2ObjectOpenHashMap()
+        val xteas: Array<Xtea?>
         path.bufferedReader().use { reader ->
-            val xteas = gson.fromJson(reader, Array<Xtea?>::class.java)
-            for (xtea in xteas) {
-                xtea ?: continue
-                set(xtea.mapsquare, xtea)
-            }
+            xteas = gson.fromJson(reader, Array<Xtea?>::class.java)
+        }
+        for (xtea in xteas) {
+            xtea ?: continue
+            map[xtea.mapsquare] = xtea
         }
         return map
-    }
-
-    override operator fun get(region: Int): Xtea? = map.get(region)
-
-    override fun set(region: Int, key: Xtea) {
-        map[region] = key
     }
 
 }
