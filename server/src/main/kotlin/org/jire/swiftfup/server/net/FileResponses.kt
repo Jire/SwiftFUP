@@ -77,6 +77,8 @@ class FileResponses {
         }
         if (print) println()
 
+        library.close()
+
         val checksumsBufferArray = ByteArray(checksumsBuffer.readableBytes())
         checksumsBuffer.readBytes(checksumsBufferArray)
         checksumsBuffer.release()
