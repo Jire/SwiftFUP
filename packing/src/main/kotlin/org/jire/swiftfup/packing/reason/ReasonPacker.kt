@@ -93,9 +93,11 @@ object ReasonPacker {
         val toIndex = to.index(indexId).apply { cache() }
 
         var amount = 0
+
+        val fromArchive = fromIndex.archive(configId)!!
         val toArchive = toIndex.archive(configId)!!
 
-        for (file in toArchive.files()) {
+        for (file in fromArchive.files()) {
             if (skip != null && skip.contains(file.id)) continue
             file.data ?: continue
             toArchive.add(file)
