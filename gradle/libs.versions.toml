@@ -10,7 +10,6 @@ zero-allocation-hashing = { module = "net.openhft:zero-allocation-hashing", vers
 rs-cache-library = { module = "com.displee:rs-cache-library", version = "7.1.1" }
 disio = { module = "com.displee:disio", version = "2.2" }
 gson = { module = "com.google.code.gson:gson", version = "2.10.1" }
-runelite-cache = { module = "net.runelite:cache", version = "1.9.8" }
 tinify = { module = "com.tinify:tinify", version = "1.8.8" }
 pngtastic = { module = "com.github.depsypher:pngtastic", version = "1.7" }
 annotations = { module = "org.jetbrains:annotations", version = "24.1.0" }

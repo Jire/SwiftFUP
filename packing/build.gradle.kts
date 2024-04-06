@@ -20,13 +20,13 @@ dependencies {
 
     implementation(libs.gson)
 
-    implementation(libs.runelite.cache)
-
     implementation(libs.tinify)
     implementation(libs.pngtastic)
 
     implementation(libs.slf4j.api)
     implementation(libs.slf4j.simple)
+
+    implementation(files("../lib/cache-1.10.27-SNAPSHOT-jar-with-dependencies.jar"))
 }
 
 val defaultJvmArgs = arrayOf(
