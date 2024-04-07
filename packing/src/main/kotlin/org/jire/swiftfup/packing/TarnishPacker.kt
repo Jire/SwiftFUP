@@ -10,16 +10,22 @@ import java.nio.file.Path
 
 object TarnishPacker {
 
-    private const val REBUILD = false
+    private const val CACHE_TO_PATH = "../server/cache/"
+    private const val CACHE_FROM_PATH = "data/osrs/cache218/"
+
     private const val SPEC_BAR_MODELS = false
     private const val SOUNDS = false
+
+    private const val REBUILD = true
+    private const val REBUILD_DIRECTORY_NAME = "rebuild"
+    private const val REBUILD_DIRECTORY_PATH = "${CACHE_TO_PATH}$REBUILD_DIRECTORY_NAME"
 
     @JvmStatic
     fun main(args: Array<String>) {
         Index317.addMetaFiles("osrs_sprites_version", "osrs_sprites_crc")
         Index317.addMetaFiles("osrs_sounds_version", "osrs_sounds_crc")
 
-        val cachePath = "../server/cache/"
+        val cachePath = CACHE_TO_PATH
         if (SPEC_BAR_MODELS) {
             val cacheFrom = CacheLibrary.create("../packing/data/tarnishps/old-cache/")
             val cacheTo = CacheLibrary.create(cachePath)
@@ -40,13 +46,8 @@ object TarnishPacker {
             return
         }
 
-        val cacheFrom = CacheLibrary.create("data/osrs/cache218/")
+        val cacheFrom = CacheLibrary.create(CACHE_FROM_PATH)
         val cacheTo = CacheLibrary.create(cachePath)
-
-        if (REBUILD) {
-            cacheTo.rebuild(File("${cachePath}../rebuild/"))
-            return
-        }
 
         if (SOUNDS) {
             if (true) {
@@ -105,6 +106,10 @@ object TarnishPacker {
         cacheTo.close()
 
         cacheFrom.close()
+
+        if (REBUILD) {
+            rebuild()
+        }
     }
 
     private const val SOUNDS_INDEX = 6
@@ -602,17 +607,17 @@ object TarnishPacker {
         var fileId = 0
 
         for (region in roatzCustomRegionIds) {
-            val mapFileId = fileId++
-            val landFileId = fileId++
-
             val x = (region ushr 8) and 0xFF
             val y = region and 0xFF
 
-            val mapName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}m${x}_$y"
-            val landName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}l${x}_$y"
+            val mapName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}$region/m.dat"
+            val landName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}$region/l.dat"
 
             val mapData = File(mapName).readBytes()
             val landData = File(landName).readBytes()
+
+            val mapFileId = fileId++
+            val landFileId = fileId++
 
             cacheTo.remove(4, mapFileId)
             cacheTo.put(4, mapFileId, mapData)
@@ -629,7 +634,9 @@ object TarnishPacker {
             println("for custom region $region ($x,$y) map=$mapFileId and land=$landFileId")
         }
 
-        val xteas = DefaultXteaRepository.load(path = Path.of("data", "osrs", "cache216", "xteas.json"))
+        val xteas = DefaultXteaRepository.load(path = Path.of(CACHE_FROM_PATH, "xteas.json"))
+        println("Loaded ${xteas.size} xteas")
+
         val defaultXtea = intArrayOf(0, 0, 0, 0)
 
         for (region in 0..65535) {
@@ -638,13 +645,14 @@ object TarnishPacker {
             val x = (region ushr 8) and 0xFF
             val y = region and 0xFF
 
-            val mapFileId = fileId++
             val mapName = "m${x}_$y"
             val mapData = cacheFrom.data(5, mapName, 0) ?: continue
 
-            val landFileId = fileId++
             val landName = "l${x}_$y"
             val landData = cacheFrom.data(5, landName, 0, xteas.get(region)?.key ?: defaultXtea) ?: continue
+
+            val mapFileId = fileId++
+            val landFileId = fileId++
 
             cacheTo.remove(4, mapFileId)
             cacheTo.put(4, mapFileId, mapData)
@@ -670,6 +678,21 @@ object TarnishPacker {
 
         cacheTo.index(0).update()
         cacheTo.index(4).update()
+    }
+
+    private fun rebuild() {
+        val rebuildFile = File(REBUILD_DIRECTORY_PATH)
+        if (rebuildFile.exists()) {
+            rebuildFile.listFiles()?.forEach {
+                if (!it.delete()) {
+                    throw IllegalStateException("Failed to delete rebuild directory file \"${it.name}\"")
+                }
+            }
+        } else if (!rebuildFile.mkdirs()) {
+            throw IllegalStateException("Failed to create rebuild directory \"${REBUILD_DIRECTORY_PATH}\"")
+        }
+
+        CacheLibrary.create(CACHE_TO_PATH).rebuild(rebuildFile)
     }
 
 }
