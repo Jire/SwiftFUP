@@ -13,8 +13,10 @@ object TarnishPacker {
     private const val CACHE_TO_PATH = "../server/cache/"
     private const val CACHE_FROM_PATH = "data/osrs/cache218/"
 
-    private const val SPEC_BAR_MODELS = false
+    private const val SPEC_BAR_MODELS = true
     private const val SOUNDS = false
+
+    private const val ROATZ_DATA = false
 
     private const val REBUILD = true
     private const val REBUILD_DIRECTORY_NAME = "rebuild"
@@ -26,25 +28,6 @@ object TarnishPacker {
         Index317.addMetaFiles("osrs_sounds_version", "osrs_sounds_crc")
 
         val cachePath = CACHE_TO_PATH
-        if (SPEC_BAR_MODELS) {
-            val cacheFrom = CacheLibrary.create("../packing/data/tarnishps/old-cache/")
-            val cacheTo = CacheLibrary.create(cachePath)
-
-            for (modelId in 18552..18562) {
-                val fromFile = cacheFrom.data(1, modelId)!!
-                cacheTo.put(1, modelId, fromFile)
-
-                println("packed spec bar model $modelId")
-            }
-
-            cacheTo.index(1).update()
-
-            cacheTo.update()
-            cacheTo.close()
-
-            cacheFrom.close()
-            return
-        }
 
         val cacheFrom = CacheLibrary.create(CACHE_FROM_PATH)
         val cacheTo = CacheLibrary.create(cachePath)
@@ -106,6 +89,25 @@ object TarnishPacker {
         cacheTo.close()
 
         cacheFrom.close()
+
+        if (SPEC_BAR_MODELS) {
+            val cacheFrom = CacheLibrary.create("../packing/data/tarnishps/old-cache/")
+            val cacheTo = CacheLibrary.create(cachePath)
+
+            for (modelId in 18552..18562) {
+                val fromFile = cacheFrom.data(1, modelId)!!
+                cacheTo.put(1, modelId, fromFile)
+
+                println("packed spec bar model $modelId")
+            }
+
+            cacheTo.index(1).update()
+
+            cacheTo.update()
+            cacheTo.close()
+
+            cacheFrom.close()
+        }
 
         if (REBUILD) {
             rebuild()
@@ -606,32 +608,34 @@ object TarnishPacker {
         var mapCount = 0
         var fileId = 0
 
-        for (region in roatzCustomRegionIds) {
-            val x = (region ushr 8) and 0xFF
-            val y = region and 0xFF
+        if (ROATZ_DATA) {
+            for (region in roatzCustomRegionIds) {
+                val x = (region ushr 8) and 0xFF
+                val y = region and 0xFF
 
-            val mapName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}$region/m.dat"
-            val landName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}$region/l.dat"
+                val mapName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}$region/m.dat"
+                val landName = "${RoatzPacker.DUMP_CUSTOM_MAPS_PATH}$region/l.dat"
 
-            val mapData = File(mapName).readBytes()
-            val landData = File(landName).readBytes()
+                val mapData = File(mapName).readBytes()
+                val landData = File(landName).readBytes()
 
-            val mapFileId = fileId++
-            val landFileId = fileId++
+                val mapFileId = fileId++
+                val landFileId = fileId++
 
-            cacheTo.remove(4, mapFileId)
-            cacheTo.put(4, mapFileId, mapData)
+                cacheTo.remove(4, mapFileId)
+                cacheTo.put(4, mapFileId, mapData)
 
-            cacheTo.remove(4, landFileId)
-            cacheTo.put(4, landFileId, landData)
+                cacheTo.remove(4, landFileId)
+                cacheTo.put(4, landFileId, landData)
 
-            idx.writeShort(region)
-            idx.writeShort(mapFileId)
-            idx.writeShort(landFileId)
+                idx.writeShort(region)
+                idx.writeShort(mapFileId)
+                idx.writeShort(landFileId)
 
-            mapCount++
+                mapCount++
 
-            println("for custom region $region ($x,$y) map=$mapFileId and land=$landFileId")
+                println("for custom region $region ($x,$y) map=$mapFileId and land=$landFileId")
+            }
         }
 
         val xteas = DefaultXteaRepository.load(path = Path.of(CACHE_FROM_PATH, "xteas.json"))
@@ -640,7 +644,7 @@ object TarnishPacker {
         val defaultXtea = intArrayOf(0, 0, 0, 0)
 
         for (region in 0..65535) {
-            if (roatzCustomRegionIds.contains(region)) continue
+            if (ROATZ_DATA && roatzCustomRegionIds.contains(region)) continue
 
             val x = (region ushr 8) and 0xFF
             val y = region and 0xFF
