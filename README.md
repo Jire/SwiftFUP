@@ -2,13 +2,6 @@
 
 _Incredibly fast & efficient file update protocol_
 
-### Copyright
+[![License](https://img.shields.io/github/license/Jire/SwiftFUP.svg)](https://github.com/Jire/SwiftFUP/blob/main/LICENSE.txt)
 
-© 2021-2024 Thomas G. P. Nappo (Jire). All rights reserved.
-
-### Licensing
-
-Licensing must be privately arranged, please contact via:
-
-* **Discord:** `jire`
-* **E-mail:** `thomasgnappo@gmail.com`
+**Discord:** `jire`
