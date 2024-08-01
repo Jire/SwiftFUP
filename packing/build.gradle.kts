@@ -67,3 +67,5 @@ execTask("kozaroPacker", "org.jire.swiftfup.packing.KozaroPacker")
 execTask("pyronPacker", "org.jire.swiftfup.packing.PyronPacker")
 execTask("reasonPacker", "org.jire.swiftfup.packing.reason.ReasonPacker")
 execTask("areosPacker", "org.jire.swiftfup.packing.areos.AreosPacker")
+
+execTask("flatUnpacker", "org.jire.swiftfup.packing.FlatUnpacker")
