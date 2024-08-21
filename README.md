@@ -8,6 +8,8 @@ _Incredibly fast & efficient file update protocol_
 
 ### Setup
 
+Make sure to chose JDK `21` as the default for the project.
+
 To run the server, it's as easy as putting your cache in the
 [server/cache/](server/cache/) directory and running the
 `Run Server` IDEA run config.
