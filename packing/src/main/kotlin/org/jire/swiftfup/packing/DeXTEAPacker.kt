@@ -9,8 +9,8 @@ import java.nio.file.Path
  */
 object DeXTEAPacker {
 
-    private const val CACHE_FROM_PATH = "data/osrs/cache225/"
-    private const val CACHE_TO_PATH = "data/dextea/cache225/"
+    private const val CACHE_FROM_PATH = "data/osrs/cache226/"
+    private const val CACHE_TO_PATH = "data/dextea/cache226/"
 
     private const val REBUILD = true
     private const val REBUILD_DIRECTORY_NAME = "rebuild"
@@ -27,7 +27,7 @@ object DeXTEAPacker {
 
         val defaultXtea = IntArray(4)
 
-        val xteas = DefaultXteaRepository.load(Path.of("data", "osrs", "cache225", "xteas.json"))
+        val xteas = DefaultXteaRepository.load(Path.of("data", "osrs", "cache226", "xteas.json"))
 
         var amount = 0
         for ((regionId, xtea) in xteas) {
