@@ -4,6 +4,6 @@ plugins {
 
 allprojects {
     group = "org.jire.swiftfup"
-    version = "3.7.0"
+    version = "3.7.1"
     description = "Incredibly fast & efficient file update protocol"
 }
