@@ -15,7 +15,7 @@ public final class GZIPDecompressor {
 	}
 	
 	public GZIPDecompressor() {
-		this(new byte[999999]);
+		this(new byte[2097152]);
 	}
 	
 	public byte[] decompress(byte[] input) {
