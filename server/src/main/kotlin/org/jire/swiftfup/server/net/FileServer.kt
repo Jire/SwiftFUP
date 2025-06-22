@@ -24,6 +24,7 @@ class FileServer(
     private fun createBootstrap(): ServerBootstrap =
         bootstrapFactory
             .createServerBootstrap(parentGroup, childGroup)
+            .childOption(ChannelOption.AUTO_READ, true)
             .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120_000)
             .childOption(
                 ChannelOption.WRITE_BUFFER_WATER_MARK,
