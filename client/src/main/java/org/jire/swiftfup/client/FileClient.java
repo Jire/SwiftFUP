@@ -1,10 +1,8 @@
 package org.jire.swiftfup.client;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.SocketAddress;
@@ -41,11 +39,15 @@ public final class FileClient {
         bootstrap = new Bootstrap()
                 .channel(channelClass)
                 .group(eventLoopGroup)
-                .option(ChannelOption.SO_KEEPALIVE, true)
+                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 120_000)
-                .option(ChannelOption.SO_SNDBUF, 2 << 15)
-                .option(ChannelOption.SO_RCVBUF, 2 << 15);
+                .option(ChannelOption.SO_SNDBUF, 65536)
+                .option(ChannelOption.SO_RCVBUF, 65536)
+                .option(
+                        ChannelOption.WRITE_BUFFER_WATER_MARK,
+                        new WriteBufferWaterMark(524_288, 2_097_152)
+                );
 
         this.whenReconnected = whenReconnected;
 

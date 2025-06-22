@@ -2,6 +2,7 @@ package org.jire.swiftfup.server.net
 
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.*
 import io.netty.channel.epoll.Epoll
 import io.netty.channel.epoll.EpollIoHandler
@@ -22,7 +23,7 @@ import io.netty.channel.uring.IoUringServerSocketChannel
 class BootstrapFactory
 @JvmOverloads
 constructor(
-    private val alloc: ByteBufAllocator = ByteBufAllocator.DEFAULT,
+    private val alloc: ByteBufAllocator = PooledByteBufAllocator.DEFAULT,
 ) {
 
     /**
