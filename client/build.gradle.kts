@@ -14,7 +14,7 @@ dependencies {
     implementation(libs.annotations)
 }
 
-java.toolchain.languageVersion.set(JavaLanguageVersion.of(8))
+java.toolchain.languageVersion.set(JavaLanguageVersion.of(11))
 
 java {
     withJavadocJar()

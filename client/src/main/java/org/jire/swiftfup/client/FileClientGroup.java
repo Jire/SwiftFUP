@@ -2,14 +2,19 @@ package org.jire.swiftfup.client;
 
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.IoHandlerFactory;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.epoll.Epoll;
-import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollIoHandler;
 import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.kqueue.KQueue;
-import io.netty.channel.kqueue.KQueueEventLoopGroup;
+import io.netty.channel.kqueue.KQueueIoHandler;
 import io.netty.channel.kqueue.KQueueSocketChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.channel.uring.IoUring;
+import io.netty.channel.uring.IoUringIoHandler;
+import io.netty.channel.uring.IoUringSocketChannel;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.SocketAddress;
@@ -35,15 +40,21 @@ public interface FileClientGroup {
                 remoteAddresses);
     }
 
-    default EventLoopGroup createEventLoopGroup(int threads) {
-        return Epoll.isAvailable() ? new EpollEventLoopGroup(threads)
-                : KQueue.isAvailable() ? new KQueueEventLoopGroup(threads)
-                : new NioEventLoopGroup(threads);
+    default IoHandlerFactory createIoHandlerFactory() {
+        return IoUring.isAvailable() ? IoUringIoHandler.newFactory()
+                : Epoll.isAvailable() ? EpollIoHandler.newFactory()
+                : KQueue.isAvailable() ? KQueueIoHandler.newFactory()
+                : NioIoHandler.newFactory();
     }
 
-    default Class<? extends Channel> createChannelClass(EventLoopGroup group) {
-        return group instanceof EpollEventLoopGroup ? EpollSocketChannel.class
-                : group instanceof KQueueEventLoopGroup ? KQueueSocketChannel.class
+    default EventLoopGroup createEventLoopGroup(int threads) {
+        return new MultiThreadIoEventLoopGroup(threads, createIoHandlerFactory());
+    }
+
+    default Class<? extends Channel> createChannelClass() {
+        return IoUring.isAvailable() ? IoUringSocketChannel.class
+                : Epoll.isAvailable() ? EpollSocketChannel.class
+                : KQueue.isAvailable() ? KQueueSocketChannel.class
                 : NioSocketChannel.class;
     }
 

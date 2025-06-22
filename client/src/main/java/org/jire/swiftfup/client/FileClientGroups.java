@@ -22,7 +22,7 @@ public enum FileClientGroups implements FileClientGroup {
     };
 
     private final EventLoopGroup eventLoopGroup = createEventLoopGroup();
-    private final Class<? extends Channel> channelClass = createChannelClass(eventLoopGroup);
+    private final Class<? extends Channel> channelClass = createChannelClass();
 
     protected abstract EventLoopGroup createEventLoopGroup();
 

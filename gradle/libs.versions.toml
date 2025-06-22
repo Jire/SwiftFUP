@@ -1,15 +1,15 @@
 [versions]
-slf4j = "2.0.13"
+slf4j = "2.0.17"
 
 [libraries]
-netty = { module = "io.netty:netty-all", version = "4.1.112.Final" }
-fastutil = { module = "it.unimi.dsi:fastutil", version = "8.5.14" }
+netty = { module = "io.netty:netty-all", version = "4.2.2.Final" }
+fastutil = { module = "it.unimi.dsi:fastutil", version = "8.5.15" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 zero-allocation-hashing = { module = "net.openhft:zero-allocation-hashing", version = "0.16" }
-rs-cache-library = { module = "com.displee:rs-cache-library", version = "7.1.7" }
+rs-cache-library = { module = "com.displee:rs-cache-library", version = "7.3.0" }
 disio = { module = "com.displee:disio", version = "2.3" }
-gson = { module = "com.google.code.gson:gson", version = "2.11.0" }
+gson = { module = "com.google.code.gson:gson", version = "2.13.1" }
 tinify = { module = "com.tinify:tinify", version = "1.8.8" }
 pngtastic = { module = "com.github.depsypher:pngtastic", version = "1.8" }
-annotations = { module = "org.jetbrains:annotations", version = "24.1.0" }
+annotations = { module = "org.jetbrains:annotations", version = "26.0.2" }
