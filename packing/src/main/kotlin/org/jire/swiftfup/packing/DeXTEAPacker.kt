@@ -9,8 +9,11 @@ import java.nio.file.Path
  */
 object DeXTEAPacker {
 
-    private const val CACHE_FROM_PATH = "data/osrs/cache226/"
-    private const val CACHE_TO_PATH = "data/dextea/cache226/"
+    private const val CACHE_VERSION = 228
+    private const val CACHE_DIR = "cache$CACHE_VERSION"
+
+    private const val CACHE_FROM_PATH = "data/osrs/$CACHE_DIR/"
+    private const val CACHE_TO_PATH = "data/dextea/$CACHE_DIR/"
 
     private const val REBUILD = true
     private const val REBUILD_DIRECTORY_NAME = "rebuild"
@@ -20,17 +23,18 @@ object DeXTEAPacker {
 
     @JvmStatic
     fun main(args: Array<String>) {
+        val xteas = DefaultXteaRepository.load(Path.of("data", "osrs", CACHE_DIR, "xteas.json"))
+
         val indexId = MAP_INDEX_ID
 
         val from = CacheLibrary.create(CACHE_FROM_PATH)
         val to = CacheLibrary.create(CACHE_TO_PATH)
 
+        val defaultLandData = ByteArray(0)
         val defaultXtea = IntArray(4)
 
-        val xteas = DefaultXteaRepository.load(Path.of("data", "osrs", "cache226", "xteas.json"))
-
         var amount = 0
-        for ((regionId, xtea) in xteas) {
+        for (regionId in 0..65535) {
             val x = (regionId ushr 8) and 0xFF
             val y = regionId and 0xFF
 
@@ -38,10 +42,17 @@ object DeXTEAPacker {
             val mapData = from.data(indexId, mapName, 0) ?: continue
 
             val landName = "l${x}_$y"
-            val landData = from.data(indexId, landName, 0, xtea.key) ?: continue
 
-            to.put(indexId, mapName, mapData)
-            to.put(indexId, landName, landData, defaultXtea)
+            val xtea = xteas[regionId]
+            if (xtea == null) {
+                to.remove(indexId, mapName)
+                to.remove(indexId, landName)
+            } else {
+                //to.put(indexId, mapName, mapData)
+
+                val landData = from.data(indexId, landName, 0, xtea.key)!!
+                to.put(indexId, landName, landData, defaultXtea)
+            }
 
             amount++
         }
